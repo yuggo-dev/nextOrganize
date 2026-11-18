@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -7,8 +7,8 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 if (existsSync(path.join(root, '.env'))) process.loadEnvFile(path.join(root, '.env'));
 const tables = {
   users: ['id', 'name', 'email', 'password_hash'],
-  task_types: ['id', 'user_id', 'name', 'color'],
-  tasks: ['id', 'title', 'category', 'priority', 'due', 'done', 'created_at', 'user_id', 'due_time', 'type_id', 'recurrence', 'recurrence_until'],
+  task_types: ['id', 'user_id', 'name', 'color', 'icon'],
+  tasks: ['id', 'title', 'category', 'priority', 'due', 'done', 'created_at', 'user_id', 'due_time', 'type_id', 'recurrence', 'recurrence_until', 'recurrence_days'],
   task_occurrences: ['task_id', 'due', 'done', 'skipped'],
 };
 const dryRun = process.argv.includes('--dry-run');
@@ -39,7 +39,9 @@ try {
     await client.connect();
     await client.query('BEGIN');
     await client.query("SELECT pg_advisory_xact_lock(178492681)");
-    await client.query(readFileSync(path.join(root, 'supabase/migrations/202611170001_initial.sql'), 'utf8'));
+    for (const migration of readdirSync(path.join(root, 'supabase/migrations')).filter(file => file.endsWith('.sql')).sort()) {
+      await client.query(readFileSync(path.join(root, 'supabase/migrations', migration), 'utf8'));
+    }
     await client.query(`LOCK TABLE ${[...Object.keys(tables), 'sessions'].map(table => `tarefas.${table}`).join(', ')} IN ACCESS EXCLUSIVE MODE`);
     for (const table of [...Object.keys(tables), 'sessions']) {
       const { rows } = await client.query(`SELECT count(*) AS n FROM tarefas.${table}`);

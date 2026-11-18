@@ -1,0 +1,1 @@
+ALTER TABLE tarefas.task_types ADD COLUMN IF NOT EXISTS icon TEXT;

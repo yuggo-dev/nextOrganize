@@ -9,6 +9,8 @@ import { createApp } from './src/app.js';
 test('PostgreSQL API supports accounts, ownership, transactions and daily history', async () => {
   const engine = new PGlite();
   await engine.exec(await readFile(new URL('../supabase/migrations/202611170001_initial.sql', import.meta.url), 'utf8'));
+  await engine.exec(await readFile(new URL('../supabase/migrations/202611180001_weekly_recurrence.sql', import.meta.url), 'utf8'));
+  await engine.exec(await readFile(new URL('../supabase/migrations/202611180002_type_icons.sql', import.meta.url), 'utf8'));
   // The same SQL and transaction adapter used by node-postgres, backed by a real embedded PostgreSQL.
   const query = (sql, params) => engine.query(sql, params);
   const db = postgresDatabase({ query, connect: async () => ({ query, release() {} }), end: () => engine.close() });
@@ -74,6 +76,30 @@ test('PostgreSQL API supports accounts, ownership, transactions and daily histor
     assert.match(login.body.token,/^[a-f0-9]{64}$/);
     const token=login.body.token;
     assert.equal((await edge('/auth/me',{token})).body.user.email,alice.email);
+    const rename={name:'Projetos',color:'#ABCDEF',icon:'FaBriefcase'};
+    assert.equal((await call('/task-types/'+type.body.id,{method:'PATCH',cookie:b.cookie,body:rename})).status,404);
+    assert.equal((await edge('/task-types/'+type.body.id,{method:'PATCH',token,body:rename})).status,200);
+    const changeable=await edge('/tasks',{method:'POST',token,body:{title:'Mover',type_id:type.body.id,due:'2026-11-18'}});
+    assert.equal(changeable.body.category,'Projetos');
+    assert.equal(changeable.body.category_icon,'FaBriefcase');
+    const withoutIcon=await edge('/task-types/'+type.body.id,{method:'PATCH',token,body:{name:'Projetos',color:'#ABCDEF'}});
+    assert.equal(withoutIcon.body.icon,'FaBriefcase');
+    assert.equal((await edge('/task-types/'+type.body.id,{method:'PATCH',token,body:{...rename,icon:'<script>'}})).status,400);
+    assert.equal(changeable.body.category_color,'#abcdef');
+    const defaults=(await edge('/task-types',{token})).body;
+    const destination=defaults.find(item=>item.id!==type.body.id);
+    const moved=await edge('/tasks/'+changeable.body.id,{method:'PATCH',token,body:{title:'Movida',due:'2026-11-23',due_time:'15:30',type_id:destination.id}});
+    assert.equal(moved.status,200);assert.equal(moved.body.due,'2026-11-23');assert.equal(moved.body.title,'Movida');assert.equal(moved.body.type_id,destination.id);
+    assert.equal((await edge('/tasks/'+changeable.body.id,{method:'DELETE',token})).status,204);
+
+    const weekly=await edge('/tasks',{method:'POST',token,body:{title:'Semanal',recurrence:'weekly',recurrence_days:[5,1,3,1],due:'2026-11-16',recurrence_until:'2026-11-27'}});
+    assert.equal(weekly.status,201);
+    assert.deepEqual(weekly.body.recurrence_days,[1,3,5]);
+    assert.equal((await edge('/tasks/'+weekly.body.id,{method:'PATCH',token,body:{occurrence_date:'2026-11-17',done:true}})).status,400);
+    assert.equal((await edge('/tasks/'+weekly.body.id,{method:'PATCH',token,body:{occurrence_date:'2026-11-30',done:true}})).status,400);
+    assert.equal((await edge('/tasks/'+weekly.body.id,{method:'PATCH',token,body:{occurrence_date:'2026-11-18',done:true}})).body.occurrences[0].done,true);
+    assert.equal((await edge('/tasks/'+weekly.body.id,{method:'DELETE',token})).status,204);
+
     const created=await edge('/tasks',{method:'POST',token,body:{title:'Remota',category:'Pessoal',due:'2026-11-17'}});
     assert.equal(created.status,201);
     const bobLogin=await edge('/auth/login',{method:'POST',body:{...alice,email:'bob@example.test'}});

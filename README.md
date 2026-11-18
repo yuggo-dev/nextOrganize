@@ -11,7 +11,7 @@ Agenda pessoal com contas individuais, calendário mensal e tarefas organizadas 
 - Tipos personalizados com nome e cor, criados no botão **Novo tipo** ou durante o cadastro de uma tarefa.
 - Tarefas de hoje priorizadas na ordenação e atrasadas com indicação visual e seção própria.
 - Conclusão, reabertura, exclusão, filtro por tipo e opção de ocultar concluídas.
-- Tarefas diárias com data final opcional, conclusão independente por dia e combo de dias consecutivos concluídos.
+- Tarefas diárias ou em dias da semana selecionados, com duração por dias/semanas ou data final, conclusão independente por ocorrência e combo de ocorrências cumpridas.
 - Lista com rolagem interna, mantendo o calendário e os controles visíveis. Em telas estreitas, o calendário aparece acima da lista.
 - Seção retrátil de tarefas diárias, com contagem de concluídas no cabeçalho.
 - Interface com navegação lateral, tema escuro inicial em tons azul-acinzentados e opção de alternar para o tema claro.
@@ -44,7 +44,7 @@ Depois de alterar a interface, gere o build novamente para atualizar a versão s
 
 1. Crie sua conta com nome, e-mail e senha de 8 a 128 caracteres ou entre com uma conta existente.
 2. Clique em **Nova tarefa** e informe título, tipo, prioridade, data e horário.
-3. Use **Novo tipo** para criar categorias como Trabalho, Físico e Alimentação com suas próprias cores.
+3. Use **Tipos → Novo tipo** para criar categorias como Trabalho, Físico e Alimentação com suas próprias cores.
 4. Selecione um dia no calendário para consultar suas tarefas. Os cartões do resumo também abrem as respectivas listas.
 5. Use a caixa de seleção para concluir ou reabrir uma tarefa. A seção **Atrasadas** reúne as pendências que passaram do prazo.
 6. Role a lista ao lado do calendário para acessar as demais tarefas. Clique em **Rotina diária** para recolher ou expandir as repetições.
@@ -55,6 +55,7 @@ Para criar uma tarefa diária, selecione **Repetição → Todos os dias** na ja
 
 Comece pelo [índice da documentação](docs/README.md). Consulte também:
 
+- [Branches: produção e desenvolvimento](docs/branches.md)
 - [Ferramentas e comandos](docs/tools.md)
 - [Arquitetura local e remota](docs/architecture.md)
 - [Estado da integração com Supabase](docs/migration-status.md)

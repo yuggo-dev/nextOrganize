@@ -21,7 +21,7 @@ Os caminhos abreviados na tabela pertencem a `client/src/domains/tasks/`.
 
 - O dia atual é selecionado na abertura. Clicar em outro dia mostra suas tarefas ao lado do calendário.
 - A barra lateral alterna entre **Início**, com a agenda, e **Desempenho**, com os indicadores de todas as tarefas da conta, independentemente da busca e dos filtros da agenda.
-- O resumo mostra tarefas em aberto para hoje, para os próximos sete dias e o total em aberto. Cada cartão abre sua seleção de tarefas.
+- O resumo mostra tarefas em aberto para hoje, para os próximos sete dias e o total em aberto. Os atalhos Hoje, 7 dias e Em aberto na barra da agenda abrem as respectivas seleções.
 - Uma tarefa fica atrasada após sua data ou após o horário de conclusão no dia atual. Uma tarefa antiga sem horário fica atrasada quando a data passa.
 - A ordenação apresenta primeiro as tarefas de hoje com prazo em aberto, depois as futuras, as sem prazo, as atrasadas e as concluídas. Dentro desses grupos, considera data, horário e prioridade.
 - Cada tarefa atrasada recebe texto de status e borda tracejada. A cor do tipo continua visível. O resumo informa quantas atividades abertas estão atrasadas.
@@ -116,3 +116,117 @@ Na Edge, `server/src/edge/handler.js` recebe as requisições; substitua o prefi
 `/api` das rotas acima por `/functions/v1/tarefas-api`. A autenticação usa Bearer.
 O frontend usa `VITE_API_URL` para escolher a base sem alterar as regras de agenda.
 A implantação efetiva está registrada em [estado da integração](../migration-status.md).
+
+
+## Repetição em dias selecionados
+
+Em **Nova tarefa → Repetição → Dias da semana**, selecione os dias desejados.
+A duração pode ser sem data final, até uma data ou por uma quantidade de dias ou
+semanas. O período é contado desde a data inicial e inclui o último dia; semanas
+representam blocos de sete dias, não uma quantidade de ocorrências.
+
+A API aceita `recurrence: "weekly"` e `recurrence_days: [1, 3, 5]`, por exemplo,
+para segunda, quarta e sexta. Os números vão de 0 (domingo) a 6 (sábado). A lista
+é normalizada sem duplicatas. É obrigatório selecionar pelo menos um dia e, se
+houver data final, o intervalo deve incluir uma ocorrência programada.
+
+`recurrence_until` guarda a data final calculada pelo formulário. Tarefas diárias
+continuam aceitando `daily`. As conclusões e remoções usam o mesmo histórico por
+data. A API rejeita alterações de ocorrência fora dos dias e do período escolhidos.
+O combo considera ocorrências programadas consecutivas, sem interromper por dias
+não selecionados. O calendário e os indicadores expandem somente esses dias.
+
+A migração PostgreSQL `202611180001_weekly_recurrence.sql` adiciona
+`recurrence_days` e amplia a restrição de repetição. SQLite adiciona a coluna ao
+iniciar. As migrações PostgreSQL são aplicadas em ordem pelos scripts do projeto.
+
+
+## Editar e mover uma tarefa
+
+O botão de lápis no card abre **Editar tarefa**, preenchido com os dados atuais.
+É possível mudar título, tipo, prioridade, data e horário. Mudar a data move a
+tarefa na agenda; trocar o tipo mantém seu ID e usa a nova categoria/cor. O mesmo
+`PATCH /tasks/:id` é usado, mantendo a autorização por conta e o histórico.
+
+Para uma ocorrência periódica, a janela edita a definição da repetição inteira,
+e informa esse alcance antes de salvar. Não move somente uma ocorrência isolada.
+O histórico permanece gravado, mas mudar o intervalo ou os dias programados pode
+retirar ocorrências antigas da visualização. Os filtros da lista são limpos após
+a edição para facilitar a localização da tarefa atualizada.
+
+
+## Retorno visual e progresso
+
+Na seleção de um dia, a lista mostra o progresso das tarefas que correspondem
+à busca e ao tipo selecionados. O cálculo inclui concluídas mesmo quando
+**Ocultar concluídas** está ativo. A primeira tarefa aberta sem atraso na ordem
+atual recebe o destaque **Seu próximo passo**; se todas estiverem atrasadas, o
+destaque usa a primeira aberta. Essa indicação não altera prioridade ou prazo.
+
+Os cards destacam a cor do tipo e recebem um estado de conquista ao concluir.
+A animação breve ocorre somente após a conclusão confirmada pela API, respeitando
+`prefers-reduced-motion`. Não há pontos ou recompensas fictícias.
+
+As periódicas exibem uma trilha de segunda a domingo para a semana da ocorrência,
+com dias programados, concluídos e removidos. `series_start` preserva a data
+inicial na expansão do frontend, evitando marcar dias anteriores ao começo da
+repetição. A trilha apenas apresenta o histórico, sem alterar ocorrências.
+
+
+## Agenda ampliada
+
+A tela principal usa quase toda a janela, com uma faixa superior compacta para
+identificação e ações. O calendário e o painel de tarefas compartilham uma área
+que cresce com o espaço disponível. A barra interna reúne Hoje (incluindo a
+contagem de concluídas), 7 dias, Em aberto e busca. Os detalhes de atrasos também
+ficam disponíveis na descrição do atalho Em aberto.
+
+O menu **Tipos** reúne Novo tipo e Personalizar tipos, ao lado de Nova tarefa.
+Filtros por tipo/conclusão e progresso do dia permanecem no painel da direita.
+Em telas estreitas, calendário e tarefas ficam empilhados. Em janelas muito
+baixas, a tela pode rolar para manter os controles e os painéis utilizáveis.
+A tela de desempenho mantém sua composição própria.
+
+
+## Dashboard de desempenho no estilo da agenda
+
+A tela Desempenho usa a mesma área ampliada, cores e linguagem de ícones da
+agenda. Os quatro indicadores possuem símbolos próprios para taxa de conclusão,
+concluídas, abertas e atrasadas. Os tipos usam o ícone personalizado e sua cor no
+painel de progresso por tema, mantendo a paginação de quatro tipos.
+
+A visão geral, o gráfico dos últimos sete dias e a distribuição por prioridade
+continuam usando as mesmas regras e o mesmo filtro por data de prazo. As barras
+mostram valores reais, sem estimativas de crescimento. O agrupamento por tipo
+preserva `category_icon` como `icon` para apresentar a escolha cadastrada.
+
+Em telas grandes, os painéis ficam em duas colunas; em telas pequenas, ficam
+empilhados com rolagem vertical. A altura mínima dos gráficos evita comprimir
+indicadores e legendas para forçar todos os painéis em uma única tela.
+
+
+## Calendário: pontuais e regulares
+
+O calendário usa uma grade mensal contínua. Atividades pontuais aparecem como
+ícones destacados em um pequeno bloco na cor do tipo. As regulares (`daily` e `weekly`) aparecem
+como pequenos pontos discretos nas cores dos tipos. Não há duas caixas de
+contagem em cada célula; a legenda explica a diferença de forma.
+
+Cada célula apresenta um ícone por tipo de atividade pontual, sem título visível e sem
+limite ou agrupamento em `+N`. Os ícones quebram em linhas e as semanas acomodam
+o conteúdo. Se necessário, a grade possui rolagem própria, sem cortar os ícones. O ícone fica atenuado somente quando todas as pontuais daquele tipo no dia
+estiverem concluídas. Tipos diferentes não são agrupados por usarem o mesmo
+ícone ou cor. As regulares usam até quatro pontos por tipo, sem ícones ou contadores
+na célula; eles indicam presença de tipos, não quantidade de tarefas. A lista da direita mostra as atividades completas ao
+selecionar o dia. O tooltip contém as contagens e os nomes das atividades, e o
+rótulo acessível informa data, pontuais, regulares e concluídas.
+
+Hoje recebe destaque no número, o dia selecionado tem contorno e a conclusão de
+todas as atividades visíveis recebe um símbolo de confirmação. Ícones de tipos
+com todas as atividades concluídas ficam atenuados. Os filtros de tipo, busca e conclusão
+continuam sendo aplicados, sem alterar os dados das tarefas.
+
+Os marcadores de cada grupo do calendário priorizam tipos com mais atividades
+pendentes. Tipos totalmente concluídos aparecem por último; empates usam o nome
+do tipo em ordem alfabética. A ordenação se atualiza ao concluir ou reabrir tarefas
+e se aplica tanto aos ícones pontuais quanto aos pontos de atividades regulares.

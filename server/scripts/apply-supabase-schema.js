@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openPostgres } from '../src/infrastructure/postgres.js';
@@ -13,7 +13,9 @@ try {
   });
   await db.transaction(async () => {
     await db.query('SELECT pg_advisory_xact_lock(178492681)');
-    await db.query(readFileSync(path.join(root, 'supabase/migrations/202611170001_initial.sql'), 'utf8'));
+    for (const migration of readdirSync(path.join(root, 'supabase/migrations')).filter(file => file.endsWith('.sql')).sort()) {
+      await db.query(readFileSync(path.join(root, 'supabase/migrations', migration), 'utf8'));
+    }
   })();
   console.log('Estrutura PostgreSQL aplicada. Dados existentes preservados.');
 } catch (error) {

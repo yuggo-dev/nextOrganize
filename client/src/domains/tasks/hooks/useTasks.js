@@ -28,6 +28,17 @@ export function useTasks() {
 
   return {
     tasks, types, loading, error, setError,
+    async updateType(id, form) {
+      const type = await taskTypeApi.update(id, form);
+      setTypes(current => current.map(item => item.id === type.id ? type : item));
+      setTasks(current => current.map(task => task.type_id === type.id ? {...task, category:type.name, category_color:type.color, category_icon:type.icon} : task));
+      return type;
+    },
+    async editTask(id, form) {
+      const task = await taskApi.update(id, form);
+      replaceTask(task);
+      return task;
+    },
     async addTask(form) {
       const task = await taskApi.create(form);
       setTasks(current => [task, ...current]);

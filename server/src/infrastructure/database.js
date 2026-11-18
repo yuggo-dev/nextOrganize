@@ -29,12 +29,15 @@ export function openDatabase(filename) {
         UNIQUE(user_id, name)
       );
     `);
+    const typeColumns = new Set(db.prepare("PRAGMA table_info(task_types)").all().map(column => column.name));
+    if (!typeColumns.has("icon")) db.exec("ALTER TABLE task_types ADD COLUMN icon TEXT");
     const columns = new Set(db.prepare("PRAGMA table_info(tasks)").all().map(column => column.name));
     if (!columns.has("user_id")) db.exec("ALTER TABLE tasks ADD COLUMN user_id INTEGER REFERENCES users(id)");
     if (!columns.has("due_time")) db.exec("ALTER TABLE tasks ADD COLUMN due_time TEXT");
     if (!columns.has("type_id")) db.exec("ALTER TABLE tasks ADD COLUMN type_id INTEGER REFERENCES task_types(id)");
     if (!columns.has("recurrence")) db.exec("ALTER TABLE tasks ADD COLUMN recurrence TEXT NOT NULL DEFAULT 'none'");
     if (!columns.has("recurrence_until")) db.exec("ALTER TABLE tasks ADD COLUMN recurrence_until TEXT");
+    if (!columns.has("recurrence_days")) db.exec("ALTER TABLE tasks ADD COLUMN recurrence_days TEXT NOT NULL DEFAULT '[]'");
     db.exec(`CREATE TABLE IF NOT EXISTS task_occurrences (
       task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
       due TEXT NOT NULL,

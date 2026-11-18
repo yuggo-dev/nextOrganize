@@ -23,7 +23,7 @@ export function buildPerformance(tasks, now, period = "all") {
   for (const task of filtered) {
     const key = task.type_id ?? `category:${task.category}`;
     if (!byType.has(key)) {
-      byType.set(key, { id: key, name: task.category, color: task.category_color || "#64748b", total: 0, completed: 0 });
+      byType.set(key, { id: key, name: task.category, icon: task.category_icon || null, color: task.category_color || "#64748b", total: 0, completed: 0 });
     }
     const group = byType.get(key);
     group.total += 1;

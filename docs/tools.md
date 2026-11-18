@@ -8,6 +8,7 @@
 | Vite 5 | `client/vite.config.js` | Servidor de desenvolvimento, proxy local `/api` e build em `client/dist` |
 | Plugin React do Vite | `client/package.json` | Integração do JSX e do desenvolvimento React com o Vite |
 | JavaScript/JSX e CSS | `client/src/` | Código da interface e estilos; não há framework de componentes adicional |
+| React Icons 5 | `domains/task-types/icons.jsx` | Ícones SVG selecionáveis para tipos e tarefas, dos conjuntos Font Awesome 6 e Game Icons |
 | Fetch API | `client/src/shared/http/client.js` | Chamadas HTTP, JSON, cabeçalhos e tratamento de sessão expirada |
 | sessionStorage | Cliente HTTP e API de autenticação | Guardar o token da sessão remota por aba e por endereço de API |
 

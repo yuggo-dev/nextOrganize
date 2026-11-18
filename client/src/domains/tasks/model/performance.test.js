@@ -4,8 +4,8 @@ import { buildPerformance } from "./performance.js";
 
 const now = new Date(2026, 10, 16, 12, 0);
 const tasks = [
-  { id: 1, type_id: 10, category: "Trabalho", category_color: "#6366f1", done: true, priority: 1, due: "2026-11-15" },
-  { id: 2, type_id: 10, category: "Trabalho", category_color: "#6366f1", done: false, priority: 2, due: "2026-11-16", due_time: "13:00" },
+  { id: 1, type_id: 10, category: "Trabalho", category_icon: "FaLaptop", category_color: "#6366f1", done: true, priority: 1, due: "2026-11-15" },
+  { id: 2, type_id: 10, category: "Trabalho", category_icon: "FaLaptop", category_color: "#6366f1", done: false, priority: 2, due: "2026-11-16", due_time: "13:00" },
   { id: 3, type_id: 11, category: "Físico", done: false, priority: 1, due: "2026-11-16", due_time: "11:00" },
   { id: 4, type_id: 11, category: "Físico", done: false, priority: 2, due: "2026-11-14" },
   { id: 5, category: "Pessoal", done: true, priority: 3, due: null },
@@ -24,6 +24,7 @@ test("performance partitions statuses and calculates completion across types and
   assert.equal(data.types.length, 4);
   const work = data.types.find(type => type.id === 10);
   assert.equal(work.completed, 1);
+  assert.equal(work.icon, "FaLaptop");
   assert.equal(work.total, 2);
   assert.equal(data.priorities.reduce((sum, row) => sum + row.total, 0), data.total);
   assert.equal(data.days.at(-1).total, 2);

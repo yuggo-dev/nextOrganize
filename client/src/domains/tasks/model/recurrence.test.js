@@ -59,3 +59,15 @@ test("date iteration handles leap days and year boundaries", () => {
   assert.equal(shiftDate("2026-12-31", 1), "2027-01-01");
   assert.equal(shiftDate("2027-01-01", -1), "2026-12-31");
 });
+
+
+test("weekly repetition selects weekdays and preserves streaks across rest days", () => {
+  const weekly={...daily,id:9,due:'2026-11-16',recurrence:'weekly',recurrence_days:[1,3,5],recurrence_until:'2026-11-27',occurrences:[{due:'2026-11-16',done:true},{due:'2026-11-18',done:true}]};
+  const entries=expandRecurringTasks([weekly],'2026-11-15','2026-12-05',new Date('2026-11-19T12:00:00'));
+  assert.deepEqual(entries.map(task=>task.due),['2026-11-16','2026-11-18','2026-11-20','2026-11-23','2026-11-25','2026-11-27']);
+  assert.equal(dailyStreak(weekly,'2026-11-19'),2);
+  assert.equal(dailyStreak(weekly,'2026-11-20'),2);
+  assert.equal(dailyStreak(weekly,'2026-11-21'),0);
+  assert.equal(dailyStreak({...weekly,occurrences:[...weekly.occurrences,{due:'2026-11-20',skipped:true}]},'2026-11-20'),0);
+  assert.equal(entries[0].source_id,9);
+});

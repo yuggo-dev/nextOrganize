@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "pg": "npm:pg@8.23.1",
+    "@noble/hashes/scrypt.js": "npm:@noble/hashes@2.0.1/scrypt.js"
+  }
+}

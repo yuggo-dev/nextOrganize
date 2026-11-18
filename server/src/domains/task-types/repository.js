@@ -1,3 +1,4 @@
+import { postgresTypeRepository } from "../../infrastructure/postgres-repositories.js";
 const defaults = [
   ["Trabalho", "#6366f1"],
   ["Físico", "#14b8a6"],
@@ -17,6 +18,7 @@ export function seedTaskTypes(db, userId) {
 }
 
 export function taskTypeRepository(db) {
+  if (db.dialect === "postgres") return postgresTypeRepository(db);
   return {
     list: userId => db.prepare("SELECT id, name, color FROM task_types WHERE user_id = ? ORDER BY id").all(userId),
     get: (id, userId) => db.prepare("SELECT id, name, color FROM task_types WHERE id = ? AND user_id = ?").get(id, userId),

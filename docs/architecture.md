@@ -1,74 +1,165 @@
-# Arquitetura por domínios e camadas
+# Arquitetura da aplicação
 
-O projeto possui três domínios funcionais — autenticação, tarefas e tipos de tarefa. Cada domínio reúne seus arquivos de interface, comunicação e regras. A infraestrutura compartilhada concentra o banco, o cliente HTTP e componentes reutilizados.
+## Visão geral
 
-## Frontend
+O sistema possui três domínios: autenticação, tarefas e tipos de tarefa. A interface
+é React. As regras e a persistência ficam no backend, com dois adaptadores HTTP:
+Express para execução local/servidor Node e Fetch para Supabase Edge Functions.
 
-| Camada | Localização | Responsabilidade |
-| --- | --- | --- |
-| Composição | `client/src/main.jsx`, `client/src/App.jsx` | Inicializar o React e montar o acesso à aplicação |
-| Apresentação de autenticação | `client/src/domains/auth/AuthPage.jsx` | Login, cadastro, consulta de sessão e saída |
-| Apresentação de tarefas | `client/src/domains/tasks/Dashboard.jsx`, `components/` | Resumo, calendário, lista com rolagem, visualização de diárias e janela de cadastro |
-| Aplicação de tarefas | `client/src/domains/tasks/hooks/useTasks.js` | Carregar dados e sincronizar criação, conclusão e exclusão com o estado da interface |
-| Regras de agenda | `client/src/domains/tasks/model/schedule.js` | Datas locais, atrasos, ordem das tarefas e dias do calendário |
-| Apresentação de desempenho | `client/src/domains/tasks/PerformanceDashboard.jsx` | Indicadores e gráficos de atividades da conta |
-| Regras de desempenho | `client/src/domains/tasks/model/performance.js` | Conclusão, distribuição por status, tipos, prioridades e períodos por prazo |
-| Regras de repetição | `client/src/domains/tasks/model/recurrence.js` | Ocorrências diárias por intervalo e combo de dias consecutivos |
-| Apresentação de tipos | `client/src/domains/task-types/TypeForm.jsx` | Nome, escolha de cor e prévia de um tipo |
-| Integração dos domínios | `api.js` em cada domínio | Definir as operações HTTP daquele domínio |
-| Infraestrutura HTTP | `client/src/shared/http/client.js` | JSON, cookies, erros e notificação de sessão expirada |
-| Componentes compartilhados | `client/src/shared/components/Modal.jsx` | Janela modal nativa com foco, fechamento e tecla Esc |
-| Estilos | `client/src/styles.css` | Identidade visual, temas e adaptação à altura e largura da tela |
+Há três formas implementadas de executar o código. A disponibilidade de código
+não significa que o ambiente remoto já esteja publicado.
 
-Os componentes chamam os hooks e as APIs de seus domínios. O cliente HTTP compartilhado aplica os cabeçalhos e envia o cookie da sessão. As regras de agenda são funções independentes de componentes e de chamadas de rede.
+| Modo | Interface | API | Banco |
+| --- | --- | --- | --- |
+| Desenvolvimento local | Vite | Express | SQLite, sem `DATABASE_URL` |
+| Servidor Node com banco remoto | Vite ou build servido pelo Express | Express | PostgreSQL, com `DATABASE_URL` |
+| Arquitetura remota escolhida | Hospedagem estática separada | Supabase Edge Functions | PostgreSQL do Supabase |
 
-## Backend
-
-| Camada | Localização | Responsabilidade |
-| --- | --- | --- |
-| Inicialização | `server/index.js` | Abrir o banco e iniciar a porta HTTP |
-| Composição HTTP | `server/src/app.js` | Configurar Express, montar rotas, exigir autenticação e servir o build |
-| Transporte | `routes.js` em cada domínio | Receber requisições e produzir respostas HTTP |
-| Aplicação e regras | `auth/service.js`, `tasks/service.js` | Validar dados, verificar credenciais, resolver tipos e coordenar operações |
-| Persistência | `repository.js` em cada domínio | Executar consultas SQLite com escopo da conta autenticada |
-| Infraestrutura | `server/src/infrastructure/database.js` | Conexão, pragmas, tabelas, índices e migrações transacionais |
-| Compartilhada HTTP | `server/src/shared/http.js` | Exigir usuário, propagar erros assíncronos e padronizar respostas de erro |
-
-O domínio de tipos tem operações curtas de listagem e criação. Sua validação HTTP fica em `routes.js`, e as consultas ficam no repositório. A criação de uma conta chama a inicialização dos tipos padrão dentro da transação do cadastro.
-
-## Fluxo de criação de uma tarefa
-
-1. `TaskDialog` coleta título, tipo, prioridade, data e horário.
-2. `useTasks` chama `taskApi.create`, que usa o cliente HTTP compartilhado.
-3. O middleware identifica a sessão e exige uma conta autenticada.
-4. `tasks/routes.js` encaminha o corpo para o serviço.
-5. O serviço valida a data, o horário, a prioridade e a propriedade do tipo em uma transação.
-6. O repositório grava a tarefa com o `user_id` obtido da sessão.
-7. A interface recebe a tarefa, seleciona sua data e atualiza resumo, calendário e lista.
-
-## Dados e migração
-
-| Tabela | Domínio | Conteúdo |
-| --- | --- | --- |
-| `users` | Autenticação | Nome, e-mail único e hash da senha |
-| `sessions` | Autenticação | Hash do token, conta e expiração |
-| `tasks` | Tarefas | Título, prioridade, data, horário, conclusão, proprietário e tipo |
-| `task_occurrences` | Tarefas | Conclusão e remoção de uma ocorrência diária, identificada por tarefa e data |
-| `task_types` | Tipos de tarefa | Nome e cor vinculados à conta |
-
-A inicialização adiciona `user_id`, `due_time` e `type_id` quando faltam no banco existente. Categorias antigas de contas existentes são convertidas em tipos, e tarefas anteriores continuam com seus títulos, datas e conclusão. O horário permanece vazio para registros anteriores.
-
-A migração também adiciona `recurrence` e `recurrence_until`. Registros existentes recebem `recurrence = 'none'`. As definições diárias ficam em `tasks`, e apenas as conclusões e exceções por dia são gravadas em `task_occurrences`. A interface expande o intervalo necessário para a agenda. A exclusão da definição remove as ocorrências por chave estrangeira com cascata.
-
-Registros anteriores à autenticação que estejam sem proprietário são preservados sem vínculo automático a uma conta. O isolamento das contas é aplicado nas consultas da API. Todos os domínios compartilham o mesmo arquivo SQLite.
-
-## Verificação
-
-Na raiz do projeto, execute os testes abaixo.
-
-```sh
-node --test server/auth.test.js server/migration.test.js client/src/domains/tasks/model/schedule.test.js
-npm run build
+```mermaid
+flowchart LR
+    U[Usuário] --> F[Interface React]
+    F -->|Local: /api e cookie| E[Express / Node.js]
+    F -->|Remoto: HTTPS e Bearer| D[Edge Function / Deno]
+    E --> S[Serviços e validações]
+    D --> S
+    S --> R[Repositórios por domínio]
+    R -->|Desenvolvimento| L[(SQLite)]
+    R -->|Banco remoto| P[(PostgreSQL / Supabase)]
 ```
 
-Os testes exercitam login, sessão, isolamento das tarefas e dos tipos, horário inválido, persistência, migração de dados anteriores, ordem da agenda e calendário.
+O diagrama mostra os caminhos alternativos. Uma instância da API usa um banco de
+cada vez; não há sincronização automática entre SQLite e PostgreSQL.
+
+## Frontend: apresentação, regras e HTTP
+
+| Camada | Localização | Responsabilidade |
+| --- | --- | --- |
+| Inicialização | `client/src/main.jsx`, `App.jsx` | Montar a aplicação |
+| Autenticação | `domains/auth/AuthPage.jsx` | Cadastro, login e painel autenticado |
+| Apresentação de tarefas | `domains/tasks/Dashboard.jsx`, `components/` | Agenda, filtros, lista e janela de cadastro |
+| Desempenho | `domains/tasks/PerformanceDashboard.jsx` | Indicadores e gráficos |
+| Coordenação de estado | `domains/tasks/hooks/useTasks.js` | Carregar e atualizar dados após operações da API |
+| Regras locais | `domains/tasks/model/` | Datas, ordenação, ocorrências, combos e estatísticas |
+| Tipos | `domains/task-types/TypeForm.jsx` | Cadastro de nome e cor |
+| Integração de domínio | `api.js` em cada domínio | Operações HTTP daquele domínio |
+| HTTP compartilhado | `shared/http/client.js` | URL base, JSON, cookie/token e erros |
+| Componentes e estilos | `shared/components/`, `styles.css` | Modal, temas e apresentação responsiva |
+
+Os caminhos abreviados acima estão em `client/src/`. O frontend calcula agenda e
+indicadores a partir das tarefas da conta; a API continua responsável pela
+validação e autorização das alterações.
+
+`VITE_API_URL` é incorporada no build. Sem ela, as requisições usam `/api`, com
+proxy do Vite para Express no desenvolvimento. Com a URL da função, o cliente
+chama a API remota e envia a sessão em `Authorization: Bearer ...`.
+
+## Backend: adaptadores e regras
+
+| Camada | Localização em `server/` | Responsabilidade |
+| --- | --- | --- |
+| Inicialização Node | `index.js` | Ler `.env`, escolher banco, iniciar e encerrar servidor |
+| Composição Express | `src/app.js` | Middleware, rotas, erros, health check e build opcional |
+| Transporte Express | `src/domains/*/routes.js` | Traduzir requisições/respostas e identificar sessão por cookie |
+| Transporte Edge | `src/edge/handler.js` | Request/Response, CORS, Bearer e rotas sem Express |
+| Autenticação | `src/domains/auth/service.js` | Credenciais, hashes, tokens e sessões |
+| Tarefas SQLite | `src/domains/tasks/service.js` | Validação e coordenação síncrona/transacional local |
+| Tarefas PostgreSQL | `src/domains/tasks/postgres-service.js` | Coordenação assíncrona/transacional remota |
+| Repositórios de domínio | `src/domains/*/repository.js` | Consultas SQLite ou seleção da implementação PostgreSQL |
+| SQL PostgreSQL | `src/infrastructure/postgres-repositories.js` | Contas, sessões, tipos, tarefas e ocorrências no schema `tarefas` |
+| Adaptador PostgreSQL | `src/infrastructure/postgres.js` | Pool, TLS e transação com conexão compartilhada |
+| Infraestrutura SQLite | `src/infrastructure/database.js` | Arquivo, pragmas, tabelas e migrações de registros antigos |
+| HTTP compartilhado | `src/shared/http.js` | Erros, autorização e propagação de falhas assíncronas |
+
+A validação de tarefas é compartilhada. A coordenação transacional possui versões
+SQLite e PostgreSQL; ao alterar esse fluxo, confira ambas para evitar divergência.
+A validação de nome/cor dos tipos também aparece nos dois transportes HTTP.
+
+## Empacotamento da Edge Function
+
+`supabase/functions/tarefas-api/index.ts` inicia `Deno.serve`, abre PostgreSQL sob
+demanda e fornece a implementação scrypt compatível com as senhas antigas.
+`deno.json` declara dependências npm da função; `config.toml` configura seu deploy.
+
+`npm run edge:prepare` copia uma lista explícita de módulos de `server/src/` para
+`supabase/functions/_shared/backend/`. Esse diretório é gerado e ignorado pelo Git.
+A função importa essa cópia; alterações no backend exigem preparar novamente antes
+de publicar. Se um novo módulo passar a ser importado, atualize a lista do script.
+
+## Autenticação e fronteiras de acesso
+
+| Aspecto | Express | Edge Function |
+| --- | --- | --- |
+| Sessão enviada pelo navegador | Cookie HttpOnly, SameSite=Lax; Secure em produção | Bearer em cabeçalho, guardado no `sessionStorage` do frontend |
+| Cadastro/login | Retorna usuário e define cookie | Retorna usuário e token |
+| Expiração | Sete dias no banco | Sete dias no banco; o armazenamento local dura a aba |
+| Limite de tentativas | Por IP, em memória do processo | Por hash do e-mail, persistido em `auth_attempts` |
+| Origens | Uso previsto no mesmo domínio | Lista exata configurada em `ALLOWED_ORIGINS` |
+
+Ambos armazenam somente o hash do token no banco e revogam a sessão no logout.
+Senhas usam salt individual e scrypt. As contas são próprias da aplicação;
+Supabase Auth não participa do fluxo.
+
+O gateway JWT está desabilitado para a função porque o token da aplicação não é
+um JWT do Supabase. O handler exige sessão válida antes de acessar tarefas/tipos.
+CORS limita o uso pelo navegador, mas a autorização depende da sessão e das
+consultas com `user_id`, inclusive para clientes que não sejam navegadores.
+
+As tabelas PostgreSQL ficam em um schema privado, com RLS habilitada e sem
+políticas para acesso direto pelo frontend. O backend conecta com privilégios de
+servidor; nesse caminho, o isolamento por conta é aplicado explicitamente no SQL.
+Não exponha credenciais administrativas ou o schema pela Data API.
+
+## Fluxo de criação de tarefa remota
+
+```mermaid
+sequenceDiagram
+    participant UI as React
+    participant API as Edge Function
+    participant S as Serviço
+    participant DB as PostgreSQL
+    UI->>API: POST /tasks + Bearer + JSON
+    API->>DB: Buscar sessão pelo hash e validade
+    DB-->>API: Conta autenticada
+    API->>S: Criar tarefa com user_id da sessão
+    S->>DB: BEGIN, validar tipo da conta, INSERT
+    DB-->>S: Tarefa com nome/cor e histórico
+    S->>DB: COMMIT
+    API-->>UI: 201 + tarefa
+    UI->>UI: Atualizar agenda, lista e indicadores
+```
+
+Datas e horários de prazo são representados como textos locais (`YYYY-MM-DD` e
+`HH:mm`). A agenda não converte automaticamente esses campos para outro fuso.
+
+## Modelo de dados
+
+| Tabela | Conteúdo e relação |
+| --- | --- |
+| `users` | Conta, nome, e-mail único e hash da senha |
+| `sessions` | Hash do token, usuário e expiração em milissegundos |
+| `task_types` | Nome e cor por usuário |
+| `tasks` | Definição, prioridade, data/horário, conclusão, usuário e tipo |
+| `task_occurrences` | Conclusão/exceção por tarefa e data; chave composta |
+| `auth_attempts` | Contador e expiração do limite de autenticação da Edge; somente PostgreSQL |
+
+Uma diária possui uma definição em `tasks`. Apenas as conclusões e exceções são
+persistidas por data; o frontend expande o intervalo necessário. Excluir a tarefa
+remove as ocorrências por cascata. Tipos pertencem à conta, e a API verifica sua
+propriedade antes de associá-los a uma tarefa.
+
+SQLite atualiza a estrutura ao iniciar. PostgreSQL é preparado por SQL e scripts
+explícitos. A importação preserva IDs, dados e hashes, mas não transfere sessões.
+Tarefas antigas sem proprietário permanecem sem associação automática.
+
+## Implantação e limites atuais
+
+A arquitetura escolhida exige publicar o frontend estático e a função, aplicar o
+schema, configurar secrets e informar a origem definitiva. O MCP ajuda a executar
+a administração quando disponível; ele não faz parte do caminho de uma requisição.
+
+O endpoint `/healthz` confirma o processo, sem verificar continuamente o banco.
+Testes PGlite/Deno validam comportamento local; a conexão TLS e o fluxo no domínio
+publicado ainda exigem verificação no ambiente real.
+
+Consulte [ferramentas](tools.md), [estado da integração](migration-status.md) e
+[procedimento Supabase](supabase.md) para comandos, evidências e pendências.

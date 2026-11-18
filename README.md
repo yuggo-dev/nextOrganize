@@ -1,6 +1,6 @@
 ﻿# Tarefas e prazos
 
-Agenda pessoal com contas individuais, calendário mensal e tarefas organizadas por data, horário e tipo. React e Vite na interface, Node.js e Express na API e SQLite para persistência local.
+Agenda pessoal com contas individuais, calendário mensal e tarefas organizadas por data, horário e tipo. React e Vite na interface, Express para execução local e API adaptada para Supabase Edge Functions, com SQLite local ou PostgreSQL remoto.
 
 ## Funcionalidades
 
@@ -51,6 +51,15 @@ Depois de alterar a interface, gere o build novamente para atualizar a versão s
 
 Para criar uma tarefa diária, selecione **Repetição → Todos os dias** na janela de cadastro. Informe a data inicial e o horário e, se desejar, uma data final. O card mostra **Diária** e o combo atual quando houver dias consecutivos concluídos. No menu `⋯`, é possível remover só um dia ou excluir a diária e seu histórico.
 
+## Guia técnico
+
+Comece pelo [índice da documentação](docs/README.md). Consulte também:
+
+- [Ferramentas e comandos](docs/tools.md)
+- [Arquitetura local e remota](docs/architecture.md)
+- [Estado da integração com Supabase](docs/migration-status.md)
+- [Migração e implantação](docs/supabase.md)
+
 ## Documentação por domínios e camadas
 
 | Documento | Frontend | Backend |
@@ -98,6 +107,9 @@ docs/
 | Variável | Padrão | Finalidade |
 | --- | --- | --- |
 | `PORT` | `3001` | Porta do Express |
+| `DATABASE_URL` | Vazia | Conexão PostgreSQL; quando preenchida, seleciona o banco remoto |
+| `PG_CA_PATH` | Vazia | Certificado CA opcional para validar TLS |
+| `TRUST_PROXY_HOPS` | Vazia | Número de proxies confiáveis na hospedagem |
 | `DB_PATH` | `server/tarefas.db` | Arquivo SQLite |
 | `NODE_ENV` | Ambiente do processo | Com `production`, o cookie de sessão exige HTTPS |
 
@@ -109,7 +121,7 @@ $env:DB_PATH = ".\server\tarefas.db"
 npm start
 ```
 
-As variáveis são lidas do ambiente. Se alterar a porta da API durante o desenvolvimento, ajuste o proxy em `client/vite.config.js`.
+As variáveis são lidas do ambiente e do `.env` na raiz, sem sobrescrever variáveis já definidas. Se alterar a porta da API durante o desenvolvimento, ajuste o proxy em `client/vite.config.js`.
 
 As rotas usam o prefixo `/api` e corpos JSON com `Content-Type: application/json`. Requisições de escrita exigem `X-Requested-With: tarefas`. Tarefas e tipos exigem o cookie de sessão obtido no cadastro ou login. Os contratos completos estão nos documentos de cada domínio.
 
@@ -123,6 +135,10 @@ npm run build
 ```
 
 ## Persistência e backup
+
+A integração PostgreSQL no Supabase e a implantação remota estão descritas em
+[Migração para Supabase](docs/supabase.md). Com `DATABASE_URL`, a API usa PostgreSQL;
+sem essa variável, usa SQLite em desenvolvimento. Produção exige PostgreSQL.
 
 O servidor cria e migra as tabelas ao iniciar. Contas, sessões, tarefas e tipos ficam no mesmo arquivo SQLite, com isolamento por usuário na API. Categorias antigas de contas existentes são convertidas em tipos, e tarefas anteriores recebem horário vazio. Tarefas antigas sem proprietário são preservadas sem vínculo automático com uma conta.
 

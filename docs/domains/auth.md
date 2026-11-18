@@ -29,3 +29,22 @@ O e-mail é normalizado em minúsculas. A senha recebe salt individual e hash sc
 | `POST` | `/api/auth/logout` | — | `204` e revogação da sessão |
 
 As respostas de usuário contêm `id`, `name` e `email`. Dados inválidos retornam `400`, credenciais incorretas retornam `401`, e-mail repetido retorna `409` e excesso de tentativas retorna `429`.
+
+## Variação em Supabase Edge Functions
+
+O contrato acima usa o prefixo Express `/api`. Na Edge, a base é
+`/functions/v1/tarefas-api`; os sufixos `/auth/register`, `/auth/login`, `/auth/me`
+e `/auth/logout` permanecem iguais.
+
+O transporte é `server/src/edge/handler.js`. Cadastro e login retornam
+`{ user, token }`, sem cookie. O frontend guarda o token em `sessionStorage` e o
+envia em `Authorization: Bearer ...`. O banco mantém o hash e a expiração de sete
+dias. A saída revoga a sessão; fechar a aba remove sua persistência local.
+
+Na Edge, o limite é de 30 tentativas por e-mail em 15 minutos, persistido no
+PostgreSQL; o limite por IP em memória descrito acima se aplica ao Express.
+A derivação usa `@noble/hashes` no Deno, com parâmetros compatíveis com o scrypt
+existente. As contas não são migradas para Supabase Auth.
+
+Veja [arquitetura](../architecture.md) para as fronteiras de autorização e
+[implantação](../supabase.md) para CORS, secrets e configuração do gateway.

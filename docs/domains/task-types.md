@@ -35,3 +35,15 @@ Na migração, as categorias existentes também são cadastradas como tipos. Cat
 ```
 
 O nome precisa ter de 1 a 60 caracteres após remover espaços nas extremidades. A cor deve seguir `#RRGGBB`. Dados inválidos retornam `400` e nome repetido retorna `409`. As duas rotas exigem autenticação.
+
+## Execução com PostgreSQL e Edge
+
+Em PostgreSQL, os nomes são comparados com `lower(name)` e um índice único por
+usuário; em SQLite, a regra usa `COLLATE NOCASE`. As regras de comparação Unicode
+podem variar entre bancos, portanto não se deve assumir equivalência completa
+das duas collations para todo caractere.
+
+O SQL remoto está em `infrastructure/postgres-repositories.js`. O handler Edge
+valida os mesmos campos de nome/cor e usa a sessão Bearer. Substitua o prefixo
+`/api` por `/functions/v1/tarefas-api` nas rotas acima. A API exige a propriedade
+do tipo antes de associá-lo a uma tarefa.

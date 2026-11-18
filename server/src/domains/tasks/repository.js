@@ -1,9 +1,11 @@
+import { postgresTaskRepository } from "../../infrastructure/postgres-repositories.js";
 const select = `SELECT tasks.*, COALESCE(task_types.name, tasks.category) AS category,
   COALESCE(task_types.color, '#64748b') AS category_color
   FROM tasks LEFT JOIN task_types ON task_types.id = tasks.type_id AND task_types.user_id = tasks.user_id`;
 const serialize = ({ user_id, ...task }) => ({ ...task, done: !!task.done });
 
 export function taskRepository(db) {
+  if (db.dialect === "postgres") return postgresTaskRepository(db);
   const occurrences = db.prepare("SELECT due, done, skipped FROM task_occurrences WHERE task_id = ? ORDER BY due");
   const withHistory = task => {
     const result = serialize(task);

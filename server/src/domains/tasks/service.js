@@ -1,9 +1,10 @@
+import { postgresTaskService } from "./postgres-service.js";
 import { taskRepository } from "./repository.js";
 import { taskTypeRepository } from "../task-types/repository.js";
 import { httpError } from "../../shared/http.js";
 import { validDate, validateOccurrence } from "./validation.js";
 
-function validateTask(body, current = {}) {
+export function validateTask(body, current = {}) {
   const title = body.title === undefined ? current.title : String(body.title ?? "").trim().slice(0, 200);
   if (!title) throw httpError(400, "Título obrigatório.");
   const priority = Number(body.priority ?? current.priority ?? 2);
@@ -30,6 +31,7 @@ function validateTask(body, current = {}) {
 }
 
 export function taskService(db) {
+  if (db.dialect === "postgres") return postgresTaskService(db);
   const repository = taskRepository(db);
   const types = taskTypeRepository(db);
 

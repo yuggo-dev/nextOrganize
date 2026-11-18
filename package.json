@@ -5,7 +5,15 @@
     "setup": "npm install && npm --prefix server install && npm --prefix client install",
     "dev": "concurrently -n api,web -c cyan,magenta \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
     "build": "npm --prefix client run build",
-    "start": "npm --prefix server start"
+    "start": "npm --prefix server start",
+    "db:migrate:check": "node server/scripts/migrate-supabase.js --dry-run",
+    "db:migrate:supabase": "node server/scripts/migrate-supabase.js",
+    "db:schema:supabase": "node server/scripts/apply-supabase-schema.js",
+    "test": "node --test server/*.test.js client/src/domains/tasks/model/*.test.js",
+    "edge:prepare": "node server/scripts/prepare-edge.js",
+    "dev:remote": "npm --prefix client run dev -- --strictPort"
   },
-  "devDependencies": { "concurrently": "^9.1.0" }
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
 }

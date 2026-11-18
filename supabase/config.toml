@@ -1,0 +1,7 @@
+project_id = "nextorganize"
+
+[functions.tarefas-api]
+# A aplicação usa suas próprias sessões Bearer verificadas no banco.
+# Login/cadastro são públicos; tarefas e tipos exigem sessão válida.
+verify_jwt = false
+entrypoint = "./functions/tarefas-api/index.ts"

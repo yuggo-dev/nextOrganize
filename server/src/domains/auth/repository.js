@@ -1,6 +1,8 @@
+import { postgresAuthRepository } from "../../infrastructure/postgres-repositories.js";
 import { seedTaskTypes } from "../task-types/repository.js";
 
 export function authRepository(db) {
+  if (db.dialect === "postgres") return postgresAuthRepository(db);
   return {
     findUser: email => db.prepare("SELECT * FROM users WHERE email = ?").get(email),
     createUser: db.transaction((name, email, passwordHash) => {

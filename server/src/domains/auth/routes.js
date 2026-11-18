@@ -6,12 +6,12 @@ const cookieOptions = { httpOnly: true, sameSite: "lax", secure: process.env.NOD
 
 export function sessionMiddleware(db) {
   const service = authService(db);
-  return (req, _res, next) => {
+  return asyncRoute(async (req, _res, next) => {
     const cookie = (req.headers.cookie || "").split(";").map(part => part.trim()).find(part => part.startsWith("session="));
     req.sessionHash = tokenHash(cookie?.slice("session=".length) || "");
-    req.user = service.findSession(req.sessionHash);
+    req.user = await service.findSession(req.sessionHash);
     next();
-  };
+  });
 }
 
 export function authRoutes(db) {
@@ -33,23 +33,23 @@ export function authRoutes(db) {
     next();
   }
 
-  function signIn(req, res, user, status) {
-    service.removeSession(req.sessionHash);
-    res.cookie("session", service.createSession(user.id), { ...cookieOptions, maxAge: sessionAge });
+  async function signIn(req, res, user, status) {
+    await service.removeSession(req.sessionHash);
+    res.cookie("session", await service.createSession(user.id), { ...cookieOptions, maxAge: sessionAge });
     res.status(status).json({ user });
   }
 
   router.get("/me", (req, res) => res.json({ user: req.user || null }));
   router.post("/register", limitAuth, asyncRoute(async (req, res) => {
-    signIn(req, res, await service.register(req.body || {}), 201);
+    await signIn(req, res, await service.register(req.body || {}), 201);
   }));
   router.post("/login", limitAuth, asyncRoute(async (req, res) => {
-    signIn(req, res, await service.login(req.body || {}), 200);
+    await signIn(req, res, await service.login(req.body || {}), 200);
   }));
-  router.post("/logout", (req, res) => {
-    service.removeSession(req.sessionHash);
+  router.post("/logout", asyncRoute(async (req, res) => {
+    await service.removeSession(req.sessionHash);
     res.clearCookie("session", cookieOptions);
     res.status(204).end();
-  });
+  }));
   return router;
 }

@@ -104,3 +104,15 @@ O `PATCH` preserva campos omitidos. Enviar `due_time: null` remove o horário. E
 Uma tarefa diária exige `due`. Para concluir uma ocorrência, envie `{"occurrence_date":"2026-11-20","done":true}` ao `PATCH /api/tasks/:id`, usando o ID da definição. A resposta traz a definição com o array `occurrences`, cujos itens contêm `due`, `done` e `skipped`.
 
 O `DELETE /api/tasks/:id?date=YYYY-MM-DD` remove só a ocorrência indicada e retorna `200` com a definição atualizada. O `DELETE` sem data exclui a definição e seu histórico e retorna `204`. A chave composta de tarefa e data impede duplicação em novas tentativas. As verificações de propriedade da tarefa são aplicadas antes de qualquer alteração.
+
+## Execução com PostgreSQL e Edge
+
+`tasks/service.js` seleciona `postgres-service.js` para o adaptador PostgreSQL.
+Os repositórios de domínio encaminham as operações para
+`infrastructure/postgres-repositories.js`; o adaptador mantém uma conexão por
+transação. As consultas preservam o filtro de proprietário e o contrato JSON.
+
+Na Edge, `server/src/edge/handler.js` recebe as requisições; substitua o prefixo
+`/api` das rotas acima por `/functions/v1/tarefas-api`. A autenticação usa Bearer.
+O frontend usa `VITE_API_URL` para escolher a base sem alterar as regras de agenda.
+A implantação efetiva está registrada em [estado da integração](../migration-status.md).

@@ -34,3 +34,10 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Backend gerado para deploy Supabase (npm run edge:prepare)
+supabase/functions/_shared/backend/
+supabase/.temp/
+
+# Backups locais
+.local/

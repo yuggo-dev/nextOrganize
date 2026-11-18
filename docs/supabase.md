@@ -98,7 +98,7 @@ Configure no painel **Edge Functions → Secrets**:
 | Secret | Valor |
 | --- | --- |
 | `TAREFAS_DATABASE_URL` | Conexão PostgreSQL do **Transaction pooler**, porta 6543, com senha codificada |
-| `ALLOWED_ORIGINS` | Origem exata do frontend, por exemplo `https://agenda.example.com`; várias separadas por vírgula, sem barra final |
+| `ALLOWED_ORIGINS` | `<URL-do-frontend>,http://localhost:5173,http://127.0.0.1:5173`; origens exatas separadas por vírgula, sem barra final |
 | `TAREFAS_DATABASE_CA` | Opcional: conteúdo PEM da CA do banco, caso exigido pelo certificado |
 
 Não envie os secrets para o repositório. Os comandos locais de migração continuam

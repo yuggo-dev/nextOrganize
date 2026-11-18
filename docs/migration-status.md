@@ -58,11 +58,12 @@ A compatibilidade dos hashes anteriores foi testada separadamente no Deno.
 Execute `npm run dev:remote` e abra `http://localhost:5173`. Se já houver Vite nessa
 porta, use a instância existente. O arquivo local `client/.env.local` aponta para
 a função; não contém conexão PostgreSQL. As origens permitidas são
-`http://localhost:5173` e `http://127.0.0.1:5173`.
+`http://localhost:5173`, `http://127.0.0.1:5173` e `<URL-do-frontend>`.
 
-Falta escolher/publicar a hospedagem definitiva do frontend. Quando houver um
-domínio, inclua a origem exata em `ALLOWED_ORIGINS`, mantendo ou removendo as origens
-locais conforme o uso desejado, e configure `VITE_API_URL` antes do build.
+O endereço informado para o frontend é `<URL-do-frontend>` e sua
+origem está autorizada na API. O build do frontend precisa de `VITE_API_URL`
+apontando para a Edge Function. Domínios adicionais exigem inclusão explícita em
+`ALLOWED_ORIGINS`.
 
 O login da CLI é independente do MCP. Nesta execução, a publicação foi feita pela
 CLI, porque as ferramentas MCP não estavam disponíveis na sessão.
@@ -107,3 +108,12 @@ A migração `202611180002_type_icons.sql` foi aplicada e a API republicada. Os
 17 testes Node, o build e a verificação Deno passaram. O teste remoto confirmou
 criação e edição do ícone e seu retorno nas tarefas. Os dados temporários foram
 removidos. Tipos existentes mantêm nomes/cores e não receberam escolhas fixas.
+
+## Origem Netlify autorizada — 18/11/2026
+
+O secret `ALLOWED_ORIGINS` foi atualizado para aceitar
+`<URL-do-frontend>`, preservando localhost e 127.0.0.1 na porta 5173.
+A verificação remota confirmou preflight de login com HTTP 204 e cabeçalho de
+origem correto, consulta de sessão sem login com HTTP 200, acesso local mantido
+e bloqueio HTTP 403 para uma origem não autorizada. Não foram alteradas contas
+ou tarefas nesta configuração.

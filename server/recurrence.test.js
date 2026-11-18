@@ -57,4 +57,20 @@ test("daily API keeps independent idempotent history, validates dates and enforc
   assert.equal((await call("/tasks", "GET", undefined, other.cookie)).body.length, 0);
   assert.equal((await call(`/tasks/${id}`, "DELETE", undefined, owner.cookie)).status, 204);
   assert.equal(db.prepare("SELECT count(*) AS total FROM task_occurrences").get().total, 0);
+  const weeklyForm={...form,recurrence:'weekly',due:'2026-11-16',recurrence_days:[5,1,3,1],recurrence_until:'2026-11-27'};
+  const weekly=await call('/tasks','POST',weeklyForm,owner.cookie);
+  assert.equal(weekly.status,201);
+  assert.deepEqual(weekly.body.recurrence_days,[1,3,5]);
+  for(const recurrence_days of [[],[7],[-1],['1'],null]) assert.equal((await call('/tasks','POST',{...weeklyForm,recurrence_days},owner.cookie)).status,400);
+  assert.equal((await call('/tasks','POST',{...weeklyForm,recurrence_days:[0],recurrence_until:'2026-11-16'},owner.cookie)).status,400);
+  assert.equal((await call(`/tasks/${weekly.body.id}`,'PATCH',{occurrence_date:'2026-11-17',done:true},owner.cookie)).status,400);
+  assert.equal((await call(`/tasks/${weekly.body.id}`,'PATCH',{occurrence_date:'2026-11-30',done:true},owner.cookie)).status,400);
+  assert.equal((await call(`/tasks/${weekly.body.id}`,'PATCH',{occurrence_date:'2026-11-18',done:true},other.cookie)).status,404);
+  const completed=await call(`/tasks/${weekly.body.id}`,'PATCH',{occurrence_date:'2026-11-18',done:true},owner.cookie);
+  assert.equal(completed.status,200);
+  assert.equal(completed.body.occurrences[0].done,true);
+  const updated=await call(`/tasks/${weekly.body.id}`,'PATCH',{title:'Novo título'},owner.cookie);
+  assert.deepEqual(updated.body.recurrence_days,[1,3,5]);
+  assert.equal(updated.body.occurrences[0].done,true);
+
 });

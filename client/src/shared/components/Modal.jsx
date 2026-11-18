@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { FiX } from "react-icons/fi";
 
 export default function Modal({ title, children, onClose, busy = false }) {
   const ref = useRef(null);
@@ -18,7 +19,7 @@ export default function Modal({ title, children, onClose, busy = false }) {
       }}>
       <div className="modal-heading">
         <h2 id="modal-title">{title}</h2>
-        <button type="button" className="icon-button" aria-label="Fechar janela" disabled={busy} onClick={onClose}>×</button>
+        <button type="button" className="icon-button" aria-label="Fechar janela" disabled={busy} onClick={onClose}><FiX aria-hidden="true" /></button>
       </div>
       {children}
     </dialog>

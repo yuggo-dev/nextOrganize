@@ -72,7 +72,8 @@ chama a API remota e envia a sessão em `Authorization: Bearer ...`.
 
 A validação de tarefas é compartilhada. A coordenação transacional possui versões
 SQLite e PostgreSQL; ao alterar esse fluxo, confira ambas para evitar divergência.
-A validação de nome/cor dos tipos também aparece nos dois transportes HTTP.
+A validação de nome/cor dos tipos é compartilhada em `task-types/service.js`
+pelos dois transportes HTTP.
 
 ## Empacotamento da Edge Function
 

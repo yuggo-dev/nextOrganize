@@ -1,6 +1,6 @@
 import { authService, tokenHash } from '../domains/auth/service.js';
 import { taskService } from '../domains/tasks/service.js';
-import { taskTypeRepository } from '../domains/task-types/repository.js';
+import { taskTypeService } from '../domains/task-types/service.js';
 import { httpError } from '../shared/http.js';
 
 export function createEdgeHandler({ getDatabase, allowedOrigins }) {
@@ -60,7 +60,7 @@ export function createEdgeHandler({ getDatabase, allowedOrigins }) {
       if(path==='/auth/logout' && request.method==='POST') { if(token) await auth.removeSession(hash); return json(null,204); }
       if(!user) throw httpError(401,'Entre na sua conta para acessar as tarefas.');
       const tasks=taskService(db);
-      const types=taskTypeRepository(db);
+      const types=taskTypeService(db);
       if(path==='/tasks' && request.method==='GET') return json(await tasks.list(user.id));
       if(path==='/tasks' && request.method==='POST') return json(await tasks.create(body,user.id),201);
       const taskPath=path.match(/^\/tasks\/([1-9]\d*)$/);
@@ -74,11 +74,12 @@ export function createEdgeHandler({ getDatabase, allowedOrigins }) {
         }
       }
       if(path==='/task-types' && request.method==='GET') return json(await types.list(user.id));
-      if(path==='/task-types' && request.method==='POST') {
-        if(typeof body.name!=='string' || !body.name.trim() || body.name.trim().length>60) throw httpError(400,'Informe um tipo de até 60 caracteres.');
-        if(typeof body.color!=='string' || !/^#[0-9a-f]{6}$/i.test(body.color)) throw httpError(400,'Escolha uma cor válida.');
-        try { return json(await types.create(body.name.trim(),body.color.toLowerCase(),user.id),201); }
-        catch(error) { if(error.code==='23505') throw httpError(409,'Você já possui um tipo com esse nome.'); throw error; }
+      if(path==='/task-types' && request.method==='POST') return json(await types.create(body,user.id),201);
+      const typePath=path.match(/^\/task-types\/([1-9]\d*)$/);
+      if(typePath && request.method==='PATCH') {
+        const id=Number(typePath[1]);
+        if(!Number.isSafeInteger(id)||id>2147483647) throw httpError(404,'Tipo não encontrado.');
+        return json(await types.update(id,body,user.id));
       }
       return json({error:'Rota não encontrada.'},404);
     } catch(error) {

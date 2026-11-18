@@ -75,3 +75,35 @@ Docker permanece como alternativa de hospedagem, sem ser requisito dessa escolha
 
 Antes de retomar ações remotas, confira [o procedimento de implantação](supabase.md)
 e os valores configurados no ambiente, sem publicar credenciais na documentação.
+
+## Tarefas periódicas — atualização de 18/11/2026
+
+A interface permite selecionar dias da semana e duração (sem fim, até uma data
+ou por dias/semanas). A migração `202611180001_weekly_recurrence.sql` foi aplicada
+no Supabase e a API foi republicada. Os 16 testes Node, o build e a verificação
+Deno passaram. As regras validam os dias programados e o limite final, preservando
+as tarefas diárias existentes.
+
+O teste remoto também passou, incluindo rejeição de dias não programados e de
+ocorrências após a data final. A conta temporária foi removida ao terminar.
+
+## Edição de tarefas e tipos — atualização de 18/11/2026
+
+A interface oferece Personalizar tipos para nome/cor e um botão de edição em
+cada tarefa para título, tipo, prioridade e movimentação de data/horário. A
+edição de periódicas se aplica à definição inteira, preservando o histórico.
+A API foi publicada com `PATCH /task-types/:id`, validação compartilhada,
+isolamento por conta e atualização transacional dos nomes legados das tarefas.
+Os 17 testes Node, o build e a verificação Deno passaram.
+
+O teste remoto de personalização de tipo e edição/movimentação de tarefa periódica
+também passou. A conta temporária foi removida, preservando os dados da conta real.
+
+## Ícones dos tipos — atualização de 18/11/2026
+
+Foi adicionado um seletor com 47 ícones React Icons (Font Awesome 6 e Game Icons),
+organizado por contexto, com busca, opção automática e prévia na cor selecionada.
+A migração `202611180002_type_icons.sql` foi aplicada e a API republicada. Os
+17 testes Node, o build e a verificação Deno passaram. O teste remoto confirmou
+criação e edição do ícone e seu retorno nas tarefas. Os dados temporários foram
+removidos. Tipos existentes mantêm nomes/cores e não receberam escolhas fixas.

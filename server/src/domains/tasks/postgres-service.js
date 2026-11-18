@@ -38,13 +38,14 @@ export function postgresTaskService(db) {
         if (typeof body.done !== "boolean") throw httpError(400, "Informe a conclusão deste dia.");
         return repository.saveOccurrence(id, body.occurrence_date, body.done, false, userId);
       }
-      if (current.recurrence === "daily" && body.done !== undefined) {
-        throw httpError(400, "Informe o dia de conclusão da tarefa diária.");
+      if (current.recurrence !== "none" && body.done !== undefined) {
+        throw httpError(400, "Informe o dia de conclusão da tarefa periódica.");
       }
       const task = validateTask(body, current);
       const type = await resolveType(body, current, userId);
       const updated = await repository.update(id, { ...task, category: type.name, type_id: type.id }, userId);
-      if (current.recurrence !== "daily" && task.recurrence === "daily" && current.done) {
+      if (current.recurrence === "none" && task.recurrence !== "none" && current.done) {
+        validateOccurrence({ ...task }, task.due);
         return repository.saveOccurrence(id, task.due, true, false, userId);
       }
       return updated;

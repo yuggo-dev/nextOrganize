@@ -6,8 +6,9 @@ export function validDate(date) {
 }
 
 export function validateOccurrence(task, date) {
-  if (task.recurrence !== "daily" || !validDate(date) || date < task.due ||
-    (task.recurrence_until && date > task.recurrence_until)) {
-    throw httpError(400, "Escolha um dia válido para esta tarefa diária.");
+  if (!["daily", "weekly"].includes(task.recurrence) || !validDate(date) || date < task.due ||
+    (task.recurrence_until && date > task.recurrence_until) ||
+    (task.recurrence === "weekly" && !task.recurrence_days?.includes(new Date(`${date}T12:00:00Z`).getUTCDay()))) {
+    throw httpError(400, "Escolha um dia válido para esta tarefa periódica.");
   }
 }

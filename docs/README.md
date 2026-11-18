@@ -7,6 +7,7 @@ configuração de credenciais e publicação na nuvem são etapas distintas.
 
 | Documento | O que explica |
 | --- | --- |
+| [Branches e ambientes](branches.md) | Fluxo main/produção e desenvolvimento, commits e publicação |
 | [Ferramentas](tools.md) | Tecnologias usadas, responsabilidade de cada uma e comandos do projeto |
 | [Arquitetura](architecture.md) | Componentes, camadas, fluxos, bancos e autenticação |
 | [Estado da integração](migration-status.md) | O que está implementado, o que foi validado e o que falta na nuvem |

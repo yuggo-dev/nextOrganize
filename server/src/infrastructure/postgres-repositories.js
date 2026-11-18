@@ -19,18 +19,25 @@ export function postgresAuthRepository(db) {
 }
 export function postgresTypeRepository(db) {
   return {
-    list: async userId => (await db.query('SELECT id,name,color FROM tarefas.task_types WHERE user_id=$1 ORDER BY id', [userId])).rows,
-    get: (id,userId) => one(db,'SELECT id,name,color FROM tarefas.task_types WHERE id=$1 AND user_id=$2',[id,userId]),
-    findByName: (name,userId) => one(db,'SELECT id,name,color FROM tarefas.task_types WHERE lower(name)=lower($1) AND user_id=$2',[name,userId]),
-    create: (name,color,userId) => one(db,'INSERT INTO tarefas.task_types(name,color,user_id) VALUES($1,$2,$3) RETURNING id,name,color',[name,color,userId]),
+    update: db.transaction(async (id,name,color,userId,icon) => {
+      const type=await one(db,'UPDATE tarefas.task_types SET name=$1,color=$2,icon=$5 WHERE id=$3 AND user_id=$4 RETURNING id,name,color,icon',[name,color,id,userId,icon ?? null]);
+      if(!type) return undefined;
+      await db.query('UPDATE tarefas.tasks SET category=$1 WHERE type_id=$2 AND user_id=$3',[name,id,userId]);
+      return type;
+    }),
+    list: async userId => (await db.query('SELECT id,name,color,icon FROM tarefas.task_types WHERE user_id=$1 ORDER BY id', [userId])).rows,
+    get: (id,userId) => one(db,'SELECT id,name,color,icon FROM tarefas.task_types WHERE id=$1 AND user_id=$2',[id,userId]),
+    findByName: (name,userId) => one(db,'SELECT id,name,color,icon FROM tarefas.task_types WHERE lower(name)=lower($1) AND user_id=$2',[name,userId]),
+    create: (name,color,userId,icon=null) => one(db,'INSERT INTO tarefas.task_types(name,color,user_id,icon) VALUES($1,$2,$3,$4) RETURNING id,name,color,icon',[name,color,userId,icon]),
   };
 }
-const select = `SELECT t.*, COALESCE(ty.name,t.category) AS category, COALESCE(ty.color,'#64748b') AS category_color
+const select = `SELECT t.*, COALESCE(ty.name,t.category) AS category, COALESCE(ty.color,'#64748b') AS category_color, ty.icon AS category_icon
  FROM tarefas.tasks t LEFT JOIN tarefas.task_types ty ON ty.id=t.type_id AND ty.user_id=t.user_id`;
 export function postgresTaskRepository(db) {
   async function history({user_id, ...task}) {
     task.done = !!task.done;
-    if (task.recurrence === 'daily') task.occurrences = (await db.query('SELECT due,done,skipped FROM tarefas.task_occurrences WHERE task_id=$1 ORDER BY due',[task.id])).rows.map(row=>({...row,done:!!row.done,skipped:!!row.skipped}));
+    task.recurrence_days = JSON.parse(task.recurrence_days || "[]");
+    if (task.recurrence !== 'none') task.occurrences = (await db.query('SELECT due,done,skipped FROM tarefas.task_occurrences WHERE task_id=$1 ORDER BY due',[task.id])).rows.map(row=>({...row,done:!!row.done,skipped:!!row.skipped}));
     return task;
   }
   const get = async (id,userId) => {
@@ -41,13 +48,13 @@ export function postgresTaskRepository(db) {
     get,
     list: async userId => Promise.all((await db.query(`${select} WHERE t.user_id=$1 ORDER BY t.id DESC`,[userId])).rows.map(history)),
     async create(task,userId) {
-      const fields = ['title','category','priority','due','due_time','type_id','recurrence','recurrence_until'];
-      const row = await one(db,`INSERT INTO tarefas.tasks(${fields.join(',')},user_id) VALUES(${fields.map((_,i)=>`$${i+1}`).join(',')},$9) RETURNING id`,[...fields.map(f=>task[f]),userId]);
+      const fields = ['title','category','priority','due','due_time','type_id','recurrence','recurrence_until','recurrence_days'];
+      const row = await one(db,`INSERT INTO tarefas.tasks(${fields.join(',')},user_id) VALUES(${fields.map((_,i)=>`$${i+1}`).join(',')},$10) RETURNING id`,[...fields.map(f=>f==='recurrence_days'?JSON.stringify(task[f]):task[f]),userId]);
       return get(row.id,userId);
     },
     async update(id,task,userId) {
-      const fields = ['title','category','priority','due','due_time','type_id','recurrence','recurrence_until'];
-      await db.query(`UPDATE tarefas.tasks SET ${fields.map((f,i)=>`${f}=$${i+1}`).join(',')},done=$9 WHERE id=$10 AND user_id=$11`,[...fields.map(f=>task[f]),task.done?1:0,id,userId]);
+      const fields = ['title','category','priority','due','due_time','type_id','recurrence','recurrence_until','recurrence_days'];
+      await db.query(`UPDATE tarefas.tasks SET ${fields.map((f,i)=>`${f}=$${i+1}`).join(',')},done=$10 WHERE id=$11 AND user_id=$12`,[...fields.map(f=>f==='recurrence_days'?JSON.stringify(task[f]):task[f]),task.done?1:0,id,userId]);
       return get(id,userId);
     },
     async saveOccurrence(id,date,done,skipped,userId) {

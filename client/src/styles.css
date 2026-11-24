@@ -3378,6 +3378,7 @@ button.link-button:hover:not(:disabled) {
 .insight-status { --metric-color: var(--accent); display: flex; align-items: center; gap: 9px; padding: 10px; border-radius: 10px; background: color-mix(in srgb, var(--metric-color) 6%, var(--bg)); border: 1px solid color-mix(in srgb, var(--metric-color) 10%, var(--line)); }
 .insight-status.metric-completed { --metric-color: var(--success); }
 .insight-status.metric-overdue { --metric-color: var(--overdue); }
+.insight-status.metric-missed { --metric-color: var(--muted); }
 .insight-status>svg { width: 19px; height: 19px; color: var(--metric-color); flex-shrink: 0; }
 .insight-status>span { flex: 1; color: var(--muted); font-size: .66rem; }
 .insight-status>strong { font-size: .8rem; font-variant-numeric: tabular-nums; }
@@ -3583,4 +3584,1687 @@ button.link-button:hover:not(:disabled) {
 @media (max-width: 760px) {
   .agenda-workspace .month-calendar .calendar-day { grid-template-rows: 17px auto; min-height: 72px; }
   .month-punctual-row { gap: 2px; }
+}
+
+/* ---------- Atividades regulares: card enxuto ---------- */
+
+.task-list-space .regular-entry {
+  margin-bottom: 6px;
+}
+
+.regular-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 8px 6px 8px 10px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--type-color);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--type-color) 6%, var(--surface));
+  transition: border-color .15s, background .15s;
+}
+
+.regular-card:hover {
+  border-color: color-mix(in srgb, var(--type-color) 45%, var(--line));
+  border-left-color: var(--type-color);
+}
+
+.regular-card.regular-next {
+  background: color-mix(in srgb, var(--type-color) 14%, var(--surface));
+}
+
+.regular-card.overdue {
+  border-left-color: var(--overdue);
+}
+
+.regular-card.completed {
+  border-left-color: var(--success);
+  background: var(--surface);
+}
+
+.task-list-space .regular-card .task-check {
+  width: 24px;
+  min-height: 0;
+}
+
+.task-list-space .regular-card .task-check input {
+  width: 22px;
+  height: 22px;
+}
+
+.regular-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--type-color) 18%, transparent);
+  color: var(--type-color);
+}
+
+.regular-icon > svg {
+  width: 17px;
+  height: 17px;
+}
+
+.regular-body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.task-list-space .regular-card .task-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .88rem;
+}
+
+.regular-card.completed .task-title {
+  color: var(--muted);
+}
+
+.regular-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  color: var(--muted);
+  font-size: .68rem;
+}
+
+.regular-meta time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.regular-meta svg {
+  width: 11px;
+  height: 11px;
+}
+
+.regular-late {
+  color: var(--overdue);
+  font-weight: 600;
+}
+
+.regular-streak {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+  color: var(--success-ink);
+  font-size: .66rem;
+  font-weight: 600;
+}
+
+/* Semana em pontos: planejado (cor do tipo), feito (verde), hoje (anel). */
+.week-dots {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.week-dots .week-step {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 0;
+  font-size: 0;
+}
+
+.week-dots .week-step:not(.planned) {
+  opacity: 1;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 45%, transparent);
+}
+
+.week-dots .week-step.planned {
+  background: color-mix(in srgb, var(--type-color) 45%, var(--bg));
+}
+
+.week-dots .week-step.achieved {
+  background: var(--success);
+}
+
+.week-dots .week-step.selected-step {
+  outline: 1.5px solid var(--ink);
+  outline-offset: 1.5px;
+}
+
+.regular-card .task-more > summary {
+  width: 32px;
+  min-height: 32px;
+  border-color: transparent;
+}
+
+.regular-card .task-more > summary svg {
+  width: 19px;
+  height: 19px;
+}
+
+.task-list-space .regular-card:has(.task-more[open]) {
+  z-index: 5;
+}
+
+.task-action-menu button.menu-edit svg {
+  color: var(--accent);
+}
+
+@media (max-width: 520px) {
+  .week-dots {
+    display: none;
+  }
+}
+
+/* ---------- Lista do dia: regulares e pontuais numa lista só ---------- */
+
+.list-group + .list-group {
+  margin-top: 14px;
+}
+
+.list-group-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 2px 8px;
+  color: var(--muted);
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.list-group-label small {
+  font-size: inherit;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.list-group-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.regular-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.regular-notify svg {
+  color: var(--accent);
+}
+
+.regular-priority {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.regular-missed {
+  padding: 0 7px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.regular-card.missed {
+  border-left-color: color-mix(in srgb, var(--muted) 60%, transparent);
+  background: var(--surface);
+}
+
+.regular-card.missed .task-title {
+  color: var(--muted);
+}
+
+/* Janela de tarefa: escolha "Com horário / Sem horário" e textos de apoio. */
+.time-field {
+  display: grid;
+  gap: 7px;
+  font-size: .82rem;
+  font-weight: 600;
+  align-content: start;
+}
+
+.time-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 1.2em;
+  margin: -4px 0;
+}
+
+.time-mode {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 7px;
+  background: var(--bg);
+}
+
+.time-none {
+  display: flex;
+  align-items: center;
+  padding: 10px 11px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: .9rem;
+  font-weight: 400;
+}
+
+.time-mode button {
+  padding: 2px 9px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: .74rem;
+  font-weight: 600;
+}
+
+.time-mode button[aria-pressed=true],
+.time-mode button[aria-pressed=true]:hover:not(:disabled) {
+  background: var(--raised);
+  color: var(--ink);
+}
+
+.field-help {
+  margin-top: -8px;
+  color: var(--muted);
+  font-size: .74rem;
+}
+
+/* ---------- Cards maiores e mais marcados no computador ---------- */
+/* O tamanho compacto acima continua valendo no celular. */
+@media (min-width: 761px) {
+  .task-list-space .regular-entry {
+    margin-bottom: 10px;
+  }
+
+  .regular-card {
+    gap: 14px;
+    min-height: 78px;
+    padding: 14px 10px 14px 16px;
+    border-left-width: 4px;
+    border-radius: 14px;
+    background: linear-gradient(110deg, color-mix(in srgb, var(--type-color) 16%, var(--surface)), var(--surface) 70%);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--shadow) 45%, transparent);
+    transition: transform .15s, border-color .15s, box-shadow .15s;
+  }
+
+  .regular-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--shadow) 70%, transparent);
+  }
+
+  .regular-card.regular-next {
+    background: linear-gradient(110deg, color-mix(in srgb, var(--type-color) 30%, var(--surface)), var(--surface) 80%);
+    border-color: color-mix(in srgb, var(--type-color) 55%, var(--line));
+  }
+
+  .regular-card.completed,
+  .regular-card.missed {
+    background: var(--surface);
+    box-shadow: none;
+  }
+
+  .task-list-space .regular-card .task-check input {
+    width: 26px;
+    height: 26px;
+  }
+
+  .regular-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--type-color) 24%, transparent);
+  }
+
+  .regular-icon > svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .regular-body {
+    gap: 5px;
+  }
+
+  .task-list-space .regular-card .task-title {
+    font-size: 1.02rem;
+    font-weight: 650;
+  }
+
+  .regular-meta {
+    gap: 6px 14px;
+    font-size: .78rem;
+  }
+
+  .regular-meta svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .regular-streak {
+    padding: 4px 10px;
+    font-size: .74rem;
+  }
+
+  .week-dots {
+    gap: 5px;
+  }
+
+  .week-dots .week-step {
+    width: 10px;
+    height: 10px;
+  }
+
+  .regular-card .task-more > summary {
+    width: 36px;
+    min-height: 36px;
+  }
+
+  .list-group-label {
+    margin: 6px 2px 10px;
+    font-size: .74rem;
+  }
+
+  .list-group + .list-group {
+    margin-top: 20px;
+  }
+}
+
+/* Sem horário nem detalhes: a linha de detalhes some e o título fica centralizado. */
+.regular-meta:empty {
+  display: none;
+}
+
+/* Ícones do tipo maiores nos cards. */
+.regular-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.regular-icon > svg {
+  width: 21px;
+  height: 21px;
+}
+
+@media (min-width: 761px) {
+  .regular-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+  }
+
+  .regular-icon > svg {
+    width: 29px;
+    height: 29px;
+  }
+}
+
+/* ---------- Calendário: tipos no topo, "Todos" destacado e recolher no celular ---------- */
+
+/* O corpo do calendário não muda o layout no computador. */
+.calendar-body {
+  display: contents;
+}
+
+.calendar-nav .calendar-collapse {
+  display: none;
+}
+
+.calendar-type-key {
+  align-items: center;
+}
+
+.calendar-type-divider {
+  flex: 0 0 1px;
+  align-self: stretch;
+  margin: 6px 2px;
+  background: var(--line);
+}
+
+/* "Todos" não é um tipo: botão neutro, com contorno tracejado; selecionado, fica azul sólido. */
+.calendar-theme.calendar-theme-all {
+  border: 1px dashed color-mix(in srgb, var(--muted) 55%, transparent);
+  background: transparent;
+  color: var(--muted);
+}
+
+.calendar-theme.calendar-theme-all > svg {
+  color: inherit;
+}
+
+.calendar-theme.calendar-theme-all:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: none;
+  color: var(--ink);
+}
+
+.calendar-theme.calendar-theme-all[aria-pressed="true"] {
+  border: 1px solid var(--action);
+  background: var(--action);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--action) 35%, transparent);
+  color: var(--button-ink);
+}
+
+.calendar-scrim,
+.calendar-grip {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  /* Celular: tudo cabe na tela, sem rolar a página. Só a lista rola por dentro,
+     e o calendário é uma aba presa ao pé da tela que abre por cima da lista. */
+  .agenda-dashboard {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .agenda-dashboard > .agenda-topbar {
+    flex: none;
+  }
+
+  /* A aba aberta e o fundo escuro se posicionam pela moldura do app, cobrindo
+     também a barra lateral. */
+  .app-frame {
+    position: relative;
+  }
+
+  .agenda-workspace {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .agenda-workspace .agenda-toolbar { order: 0; flex: none; }
+  .agenda-workspace .day-panel {
+    order: 1;
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .agenda-workspace .day-panel .task-list-space {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* Aba fechada: só o cabeçalho do mês, no fluxo, ao pé da tela. */
+  .agenda-workspace .calendar-panel {
+    order: 2;
+    flex: none;
+    min-height: 0;
+    height: auto;
+    border-top: 1px solid var(--line);
+    border-radius: 16px 16px 0 0;
+    padding-top: 14px;
+    position: relative;
+  }
+
+  /* Puxador: faixa no topo da aba que abre e fecha com um toque. */
+  .agenda-workspace .calendar-panel > .calendar-grip {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 120px;
+    height: 22px;
+    min-height: 0;
+    margin-left: -60px;
+    padding: 0;
+    border: 0;
+    border-radius: 0 0 12px 12px;
+    background: transparent;
+    box-shadow: none;
+    cursor: pointer;
+  }
+
+  .calendar-grip > span {
+    width: 42px;
+    height: 5px;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--muted) 50%, transparent);
+    transition: background .15s, width .15s;
+  }
+
+  .calendar-grip:hover > span,
+  .calendar-grip:active > span {
+    width: 52px;
+    background: var(--accent);
+  }
+
+  .month-calendar.is-collapsed .calendar-heading h2 {
+    cursor: pointer;
+  }
+
+  .agenda-workspace .calendar-heading h2 {
+    white-space: nowrap;
+    font-size: .95rem;
+  }
+
+  .agenda-workspace .calendar-heading {
+    gap: 6px;
+  }
+
+  .agenda-workspace .calendar-nav {
+    flex: none;
+    gap: 2px;
+  }
+
+  .agenda-workspace .calendar-nav > .icon-button {
+    width: 30px;
+    min-width: 30px;
+    padding: 0;
+  }
+
+  .agenda-workspace .calendar-nav > .today-button {
+    padding: 3px 8px;
+  }
+
+  /* Grade da aba: as seis semanas dividem a altura disponível, com células
+     cheias (fundo, número grande e marcadores maiores), diferente do computador. */
+  .agenda-workspace .month-calendar:not(.is-collapsed) .calendar-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 6px;
+  }
+
+  .agenda-workspace .month-calendar:not(.is-collapsed) .month-legend {
+    order: 3;
+    justify-content: center;
+  }
+
+  .agenda-workspace .month-calendar:not(.is-collapsed) .calendar-weekdays {
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+
+  .agenda-workspace .month-calendar:not(.is-collapsed) .calendar-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-rows: repeat(6, minmax(46px, 1fr));
+    gap: 5px;
+    overflow: visible;
+  }
+
+  .agenda-workspace .month-calendar:not(.is-collapsed) .calendar-day {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 6px 2px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--raised) 70%, transparent);
+  }
+
+  .agenda-workspace .month-calendar:not(.is-collapsed) .calendar-day.outside {
+    background: transparent;
+  }
+
+  .agenda-workspace .month-calendar:not(.is-collapsed) .calendar-day.has-tasks {
+    background: color-mix(in srgb, var(--accent) 9%, var(--raised));
+  }
+
+  .agenda-workspace .month-calendar:not(.is-collapsed) .calendar-cell-heading {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .agenda-workspace .month-calendar:not(.is-collapsed) .day-number {
+    font-size: .95rem;
+    font-weight: 700;
+  }
+
+  .agenda-workspace .month-calendar:not(.is-collapsed) .month-day-content {
+    align-items: center;
+    width: 100%;
+  }
+
+  .agenda-workspace .month-calendar:not(.is-collapsed) .month-punctual-row {
+    justify-content: center;
+  }
+
+  .agenda-workspace .month-calendar:not(.is-collapsed) .month-routine-dots {
+    justify-content: center;
+  }
+
+  .agenda-workspace .month-calendar:not(.is-collapsed) .calendar-day.is-today .day-number {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--action);
+    color: var(--button-ink);
+  }
+
+  /* Faixa superior: saudação e data à esquerda, ações compactas à direita. */
+  .agenda-dashboard .agenda-topbar {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 10px;
+    min-height: 0;
+    padding: 2px 2px 4px;
+  }
+
+  .agenda-dashboard .agenda-topbar .brand {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+
+  .agenda-dashboard .agenda-topbar .brand h1 {
+    font-size: 1.08rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .agenda-dashboard .agenda-topbar .brand p {
+    display: block;
+    margin-top: 3px;
+    font-size: .64rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .agenda-dashboard .agenda-actions {
+    width: auto;
+    flex: none;
+    gap: 6px;
+  }
+
+  .agenda-dashboard .agenda-actions .action-label,
+  .agenda-dashboard .agenda-type-menu > summary svg:last-child {
+    display: none;
+  }
+
+  .agenda-dashboard .agenda-actions > button,
+  .agenda-dashboard .agenda-type-menu > summary {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 12px;
+  }
+
+  .agenda-dashboard .agenda-actions svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .month-calendar.is-collapsed .calendar-type-key,
+  .month-calendar.is-collapsed .calendar-body {
+    display: none;
+  }
+
+  .calendar-nav .calendar-collapse {
+    display: grid;
+    transition: transform .2s;
+  }
+
+  .calendar-collapse[aria-expanded="false"] {
+    transform: rotate(180deg);
+  }
+
+  /* Aba aberta: sobe por cima da lista e ocupa quase toda a área da agenda. */
+  .agenda-workspace .month-calendar:not(.is-collapsed) {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 8px;
+    bottom: 0;
+    z-index: 30;
+    border: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px 12px 12px;
+    overflow-y: auto;
+    background: var(--surface);
+    box-shadow: 0 -18px 40px var(--shadow);
+    animation: calendar-sheet-up .22s ease-out;
+  }
+
+  .calendar-scrim {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 25;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: color-mix(in srgb, #000 45%, transparent);
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .agenda-workspace .month-calendar.is-closing {
+    animation: calendar-sheet-down .22s ease-in forwards;
+  }
+
+  .calendar-scrim {
+    animation: calendar-scrim-in .22s ease-out;
+  }
+
+  .calendar-scrim.is-closing {
+    animation: calendar-scrim-out .22s ease-in forwards;
+  }
+}
+
+@keyframes calendar-sheet-down {
+  from { transform: none; opacity: 1; }
+  to { transform: translateY(70%); opacity: .3; }
+}
+
+@keyframes calendar-scrim-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes calendar-scrim-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes calendar-sheet-up {
+  from { transform: translateY(40%); opacity: .4; }
+  to { transform: none; opacity: 1; }
+}
+
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) {
+  .agenda-workspace .month-calendar:not(.is-collapsed),
+  .agenda-workspace .month-calendar.is-closing,
+  .calendar-scrim { animation: none; }
+}
+
+/* ---------- Dia atual em destaque e aba recolhida mais simples ---------- */
+
+/* Hoje: contorno e brilho na cor de ação, fundo levemente tingido, número em
+   círculo cheio e o rótulo "HOJE"; vale para computador e celular. */
+.month-calendar .calendar-day.is-today,
+.agenda-workspace .month-calendar .calendar-day.is-today,
+.agenda-workspace .month-calendar:not(.is-collapsed) .calendar-day.is-today {
+  position: relative;
+  border: 2px solid var(--action);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--action) 24%, var(--raised)), color-mix(in srgb, var(--action) 8%, var(--raised)));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--action) 22%, transparent), 0 8px 22px color-mix(in srgb, var(--action) 28%, transparent);
+  z-index: 1;
+}
+
+.month-calendar .calendar-day.is-today .day-number {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--action);
+  color: var(--button-ink);
+  font-weight: 800;
+}
+
+.month-calendar .calendar-day.is-today::after {
+  content: "HOJE";
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  color: color-mix(in srgb, var(--action) 55%, var(--ink));
+  font-size: .56rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+@media (max-width: 760px) {
+  /* No celular o rótulo vai para baixo da célula, que é estreita. */
+  .month-calendar .calendar-day.is-today::after {
+    top: auto;
+    right: auto;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: .48rem;
+  }
+
+  /* Aba recolhida: só o mês e a seta; a faixa inteira abre o calendário. */
+  .agenda-workspace .month-calendar.is-collapsed {
+    padding: 16px 14px 10px;
+  }
+
+  .month-calendar.is-collapsed .calendar-nav > :not(.calendar-collapse) {
+    display: none;
+  }
+
+  /* Aba recolhida: a data de hoje com a tag é o texto principal; o mês fica
+     pequeno embaixo. A faixa inteira abre o calendário. */
+  .month-calendar.is-collapsed .calendar-title {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 2px;
+    cursor: pointer;
+  }
+
+  .month-calendar.is-collapsed .calendar-title h2 {
+    font-size: .64rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  .month-calendar.is-collapsed .calendar-today-line {
+    margin-top: 0;
+    font-size: .88rem;
+  }
+
+  .month-calendar.is-collapsed .calendar-collapse {
+    border: 0;
+    background: transparent;
+  }
+}
+
+/* Título do mês no cabeçalho do calendário. */
+.calendar-title {
+  min-width: 0;
+}
+
+/* ---------- Dia atual em destaque na plataforma inteira ---------- */
+
+/* Selo "Hoje": mesma forma e cor em todos os lugares. */
+.today-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  padding: 3px 9px 3px 7px;
+  border-radius: 999px;
+  background: var(--action);
+  color: var(--button-ink);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--action) 35%, transparent);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+  line-height: 1.2;
+}
+
+.today-chip > svg {
+  width: 12px;
+  height: 12px;
+}
+
+.today-chip.today-chip-small {
+  padding: 1px 7px 1px 5px;
+  font-size: .6rem;
+  box-shadow: none;
+}
+
+.today-chip.today-chip-small > svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Faixa superior e Desempenho: selo + data por extenso. */
+.agenda-topbar .brand p.topbar-today,
+.insights-header p.insights-today,
+.day-heading p.day-heading-date {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.agenda-topbar .brand p.topbar-today {
+  margin-top: 5px;
+  font-size: .78rem;
+}
+
+.topbar-today > span:last-child,
+.insights-today > span:last-child,
+.day-heading-date > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-today > span:last-child::first-letter,
+.insights-today > span:last-child::first-letter,
+.day-heading-date > span::first-letter {
+  text-transform: uppercase;
+}
+
+.insights-header p.insights-today {
+  margin-top: 6px;
+  font-size: .82rem;
+}
+
+/* Título da lista: data com selo quando é hoje, e atalho de volta quando não é. */
+.day-heading p.day-heading-date {
+  margin-top: 4px;
+  font-size: .74rem;
+}
+
+.back-to-today {
+  flex: none;
+  min-height: 0;
+  padding: 2px 9px;
+  border: 1px solid color-mix(in srgb, var(--action) 55%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--action) 12%, transparent);
+  box-shadow: none;
+  color: color-mix(in srgb, var(--action) 55%, var(--ink));
+  font-size: .64rem;
+  font-weight: 700;
+}
+
+.back-to-today:hover:not(:disabled) {
+  background: var(--action);
+  color: var(--button-ink);
+}
+
+/* Atalho "Hoje" da barra da agenda, quando ativo, também na cor do dia atual. */
+.agenda-views > button:first-child[aria-pressed="true"] {
+  border-color: var(--action);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--action) 22%, transparent);
+}
+
+/* Gráfico dos últimos 7 dias: coluna de hoje destacada. */
+.weekly-column.is-today {
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--action) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--action) 45%, transparent);
+}
+
+.weekly-column.is-today .weekly-day {
+  color: color-mix(in srgb, var(--action) 55%, var(--ink));
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .agenda-topbar .brand p.topbar-today {
+    font-size: .68rem;
+    gap: 5px;
+  }
+
+  .today-chip {
+    font-size: .6rem;
+    padding: 2px 7px 2px 5px;
+  }
+
+  .day-heading p.day-heading-date {
+    font-size: .64rem;
+  }
+}
+
+/* No computador a célula de hoje já tem contorno e círculo; o rótulo "HOJE"
+   disputava espaço com o número e só aparece no celular. */
+@media (min-width: 761px) {
+  .month-calendar .calendar-day.is-today::after {
+    display: none;
+  }
+}
+
+/* ---------- Data de hoje no cabeçalho do calendário ---------- */
+
+.calendar-today-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  margin-top: 5px;
+  color: var(--ink);
+  font-size: .8rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.calendar-today-line > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-today-line > span::first-letter {
+  text-transform: uppercase;
+}
+
+.calendar-today-line .today-short {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  /* Aba aberta: forma curta da data para caber ao lado das setas. */
+  .month-calendar:not(.is-collapsed) .calendar-today-line { font-size: .7rem; }
+  .month-calendar:not(.is-collapsed) .calendar-today-line .today-long { display: none; }
+  .month-calendar:not(.is-collapsed) .calendar-today-line .today-short { display: inline; }
+}
+
+/* ---------- Calendário do computador: blocos separados ---------- */
+/* Em vez da tabela com linhas finas, cada dia é um bloco arredondado com
+   espaço entre eles; fins de semana levemente diferentes, número numa pílula e
+   os marcadores no pé do bloco. */
+@media (min-width: 761px) {
+  .agenda-workspace .month-calendar .calendar-weekdays {
+    gap: 6px;
+    padding: 0 2px;
+  }
+
+  .agenda-workspace .month-calendar .calendar-weekdays > span {
+    padding: 4px 0;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--raised) 60%, transparent);
+    font-weight: 700;
+    letter-spacing: .06em;
+  }
+
+  .agenda-workspace .month-calendar .calendar-weekdays > span:first-child,
+  .agenda-workspace .month-calendar .calendar-weekdays > span:last-child {
+    color: color-mix(in srgb, var(--accent) 60%, var(--muted));
+  }
+
+  .agenda-workspace .month-calendar .calendar-grid {
+    gap: 6px;
+    padding: 2px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    grid-template-rows: repeat(6, minmax(78px, 1fr));
+  }
+
+  .agenda-workspace .month-calendar .calendar-day {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 7px 8px;
+    border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    border-radius: 14px;
+    background: linear-gradient(170deg, color-mix(in srgb, var(--raised) 85%, transparent), color-mix(in srgb, var(--surface) 92%, transparent));
+    transition: transform .15s, border-color .15s, box-shadow .15s;
+  }
+
+  .agenda-workspace .month-calendar .calendar-day:nth-child(7n + 1),
+  .agenda-workspace .month-calendar .calendar-day:nth-child(7n) {
+    background: linear-gradient(170deg, color-mix(in srgb, var(--accent) 7%, var(--raised)), color-mix(in srgb, var(--surface) 92%, transparent));
+  }
+
+  .agenda-workspace .month-calendar .calendar-day.outside {
+    border-style: dashed;
+    background: transparent;
+    opacity: .55;
+  }
+
+  .agenda-workspace .month-calendar .calendar-day:hover:not(.is-today) {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--shadow) 70%, transparent);
+  }
+
+  .agenda-workspace .month-calendar .calendar-day.selected:not(.is-today) {
+    border: 2px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, var(--raised));
+  }
+
+  .agenda-workspace .month-calendar .calendar-day .day-number {
+    display: inline-grid;
+    place-items: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 5px;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 700;
+  }
+
+  .agenda-workspace .month-calendar .calendar-day.has-tasks:not(.is-today) .day-number {
+    background: color-mix(in srgb, var(--ink) 8%, transparent);
+  }
+
+  .agenda-workspace .month-calendar .month-day-content {
+    margin-top: auto;
+  }
+}
+
+/* ---------- Data do dia selecionado maior e dias com tarefas ---------- */
+
+/* Linha da data no cabeçalho do calendário, maior e mais forte. */
+.calendar-today-line {
+  margin-top: 6px;
+  font-size: 1.02rem;
+  font-weight: 750;
+  letter-spacing: -.01em;
+}
+
+.calendar-today-line .today-chip {
+  font-size: .74rem;
+  padding: 4px 10px 4px 8px;
+}
+
+/* Selo de outro dia (Amanhã, Em 3 dias...): contornado, sem o azul cheio de hoje. */
+.today-chip.today-chip-other {
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: none;
+  color: color-mix(in srgb, var(--accent) 55%, var(--ink));
+}
+
+/* Contagem de pendentes no canto do dia (só no computador). */
+.day-task-count {
+  display: none;
+}
+
+@media (min-width: 761px) {
+  .calendar-cell-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .day-task-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    color: color-mix(in srgb, var(--accent) 45%, var(--ink));
+    font-size: .62rem;
+    font-weight: 800;
+  }
+
+  /* Dia com tarefas: fundo tingido, contorno e uma faixa no topo, bem
+     diferente dos dias livres. */
+  .agenda-workspace .month-calendar .calendar-day.has-tasks:not(.is-today):not(.outside) {
+    border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+    background: linear-gradient(170deg, color-mix(in srgb, var(--accent) 16%, var(--raised)), color-mix(in srgb, var(--accent) 5%, var(--surface)));
+    box-shadow: inset 0 3px 0 color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+
+  .agenda-workspace .month-calendar .calendar-day.has-tasks.day-complete:not(.is-today) {
+    border-color: color-mix(in srgb, var(--success) 40%, var(--line));
+    background: linear-gradient(170deg, color-mix(in srgb, var(--success) 12%, var(--raised)), var(--surface));
+    box-shadow: inset 0 3px 0 color-mix(in srgb, var(--success) 60%, transparent);
+  }
+
+  /* Dia livre: mais apagado, para os dias com tarefas saltarem. */
+  .agenda-workspace .month-calendar .calendar-day:not(.has-tasks):not(.is-today):not(.selected) {
+    background: color-mix(in srgb, var(--raised) 35%, transparent);
+  }
+
+  .agenda-workspace .month-calendar .calendar-day:not(.has-tasks):not(.is-today) .day-number {
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  /* Título da lista um pouco maior, combinando com a data do calendário. */
+  .agenda-workspace .day-heading h2 {
+    font-size: 1.15rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .calendar-today-line .today-chip {
+    font-size: .64rem;
+    padding: 2px 8px 2px 6px;
+  }
+
+  .month-calendar.is-collapsed .calendar-today-line {
+    font-size: .92rem;
+  }
+}
+
+@media (min-width: 761px) {
+  /* A data pode quebrar em duas linhas em vez de ser cortada. */
+  .agenda-workspace .calendar-heading .calendar-title {
+    flex: 1 1 auto;
+  }
+
+  .calendar-today-line {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    white-space: normal;
+  }
+
+  /* O dia selecionado mantém o contorno mesmo tendo tarefas. */
+  .agenda-workspace .month-calendar .calendar-day.selected.has-tasks:not(.is-today):not(.outside),
+  .agenda-workspace .month-calendar .calendar-day.selected:not(.is-today) {
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+}
+
+@media (max-width: 760px) {
+  /* Aba recolhida em outro dia: selo maior ("Amanhã", "Em 3 dias"), data curta. */
+  .month-calendar.is-collapsed .calendar-today-line:not(.is-today) .today-long { display: none; }
+  .month-calendar.is-collapsed .calendar-today-line:not(.is-today) .today-short { display: inline; }
+}
+
+/* ---------- Tipos dentro do dia ---------- */
+
+/* Pontuais: círculo cheio na cor do tipo, ícone claro e contagem quando há
+   mais de uma tarefa do tipo; concluídas ficam apagadas com contorno. */
+.month-calendar .month-punctual-row {
+  gap: 4px;
+}
+
+.month-calendar .month-event {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--event-color);
+  color: #fff;
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--event-color) 40%, transparent);
+}
+
+.month-calendar .month-event > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.month-calendar .month-event.event-done {
+  opacity: 1;
+  filter: none;
+  border: 1.5px solid color-mix(in srgb, var(--event-color) 60%, transparent);
+  background: transparent;
+  box-shadow: none;
+  color: color-mix(in srgb, var(--event-color) 70%, var(--muted));
+}
+
+.month-event-count {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border: 1.5px solid var(--surface);
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: .52rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Regulares: mini cards leves por tipo, no estilo dos cards da lista. */
+.month-calendar .month-routines {
+  min-height: 0;
+  padding: 0;
+}
+
+.month-routine-cards {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+}
+
+.month-routine-card {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 18px;
+  flex: none;
+  border: 1px solid color-mix(in srgb, var(--event-color) 30%, var(--line));
+  border-left: 3px solid var(--event-color);
+  border-radius: 5px;
+  background: linear-gradient(115deg, color-mix(in srgb, var(--event-color) 22%, var(--surface)), var(--surface));
+  color: color-mix(in srgb, var(--event-color) 80%, var(--ink));
+}
+
+.month-routine-card > svg {
+  width: 11px;
+  height: 11px;
+}
+
+.month-routine-card.routine-done {
+  opacity: .38;
+  filter: saturate(.5);
+}
+
+.month-routine-more {
+  color: var(--muted);
+  font-size: .55rem;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .month-calendar .month-event {
+    width: 18px;
+    height: 18px;
+    flex-basis: 18px;
+  }
+
+  .month-calendar .month-event > svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .month-event-count {
+    display: none;
+  }
+
+  .month-routine-card {
+    width: 16px;
+    height: 14px;
+    border-left-width: 2px;
+    border-radius: 4px;
+  }
+
+  .month-routine-card > svg {
+    width: 9px;
+    height: 9px;
+  }
+}
+
+/* Legenda: regulares são mini cards leves. */
+.month-calendar .month-regular-legend {
+  width: 12px;
+  height: 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  border-left: 3px solid var(--accent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  opacity: 1;
+}
+
+/* ---------- Data no topo (celular) e aba do mês ---------- */
+
+/* No computador a data fica no calendário; a faixa superior diz "Sua agenda". */
+.topbar-day-line,
+.calendar-collapse .collapse-calendar-icon,
+.calendar-collapse .collapse-label {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  /* Celular: a data do dia selecionado sobe para a faixa superior. */
+  .agenda-topbar .brand .topbar-agenda {
+    display: none;
+  }
+
+  .agenda-topbar .brand .calendar-today-line.topbar-day-line {
+    display: flex;
+    margin-top: 5px;
+    font-size: .84rem;
+  }
+
+  .agenda-topbar .topbar-day-line:not(.is-today) .today-long { display: none; }
+  .agenda-topbar .topbar-day-line:not(.is-today) .today-short { display: inline; }
+
+  /* Aba recolhida: só o mês, em tamanho normal, e um botão evidente para abrir. */
+  .month-calendar.is-collapsed .calendar-title {
+    flex-direction: column;
+  }
+
+  .month-calendar.is-collapsed .calendar-title h2 {
+    font-size: .98rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .month-calendar.is-collapsed .calendar-today-line {
+    display: none;
+  }
+
+  .calendar-collapse[aria-expanded="false"] {
+    transform: none;
+  }
+
+  .calendar-collapse .collapse-chevron {
+    transition: transform .2s;
+  }
+
+  .agenda-workspace .month-calendar.is-collapsed .calendar-nav > .calendar-collapse {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: auto;
+    min-width: 0;
+    height: 36px;
+    padding: 0 12px 0 11px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--action);
+    color: var(--button-ink);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--action) 40%, transparent);
+    font-size: .78rem;
+    font-weight: 750;
+  }
+
+  .month-calendar.is-collapsed .calendar-collapse .collapse-calendar-icon,
+  .month-calendar.is-collapsed .calendar-collapse .collapse-label {
+    display: inline;
+  }
+
+  .month-calendar.is-collapsed .calendar-collapse svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .month-calendar.is-collapsed .calendar-collapse .collapse-chevron {
+    transform: rotate(180deg);
+  }
+}
+
+@media (max-width: 760px) {
+  .agenda-dashboard .agenda-topbar .brand p.topbar-agenda {
+    display: none;
+  }
+
+  .agenda-dashboard .agenda-topbar .brand .calendar-today-line.topbar-day-line {
+    max-width: 100%;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 760px) {
+  .agenda-dashboard .agenda-topbar .brand,
+  .agenda-dashboard .agenda-topbar .brand > div {
+    min-width: 0;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 760px) {
+  .agenda-dashboard .agenda-topbar .brand .calendar-today-line.topbar-day-line {
+    gap: 5px;
+    font-size: .76rem;
+  }
+
+  .agenda-topbar .topbar-day-line .today-chip {
+    font-size: .58rem;
+    padding: 2px 7px 2px 5px;
+  }
+}
+
+/* Mini cards das regulares numa linha só, sobrepostos como um leque, para não
+   empurrar a altura do dia. */
+.month-routine-cards {
+  flex-wrap: nowrap;
+  gap: 0;
+  min-width: 0;
+}
+
+.month-routine-card {
+  box-shadow: 0 0 0 1.5px var(--surface);
+}
+
+.month-routine-card + .month-routine-card {
+  margin-left: -7px;
+}
+
+.month-routine-more {
+  margin-left: 3px;
+}
+
+.month-calendar .calendar-day {
+  overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  .month-routine-card + .month-routine-card {
+    margin-left: -6px;
+  }
+}
+
+/* Quantidade de mini cards conforme a largura do dia. */
+.month-calendar .month-day-content {
+  container-type: inline-size;
+  width: 100%;
+}
+
+.month-routine-more.more-2,
+.month-routine-more.more-1 {
+  display: none;
+}
+
+.month-routine-card + .month-routine-card {
+  margin-left: -6px;
+}
+
+@container (max-width: 88px) {
+  .month-routine-card.rc-2,
+  .month-routine-card.rc-3,
+  .month-routine-more.more-4 { display: none; }
+  .month-routine-more.more-2 { display: inline; }
+}
+
+@container (max-width: 48px) {
+  .month-routine-card.rc-1 { display: none; }
+  .month-routine-more.more-2 { display: none; }
+  .month-routine-more.more-1 { display: inline; }
+}
+
+.agenda-workspace .month-calendar .calendar-day {
+  overflow: hidden;
+}
+
+/* ---------- Computador: coloração dos dias igual à do celular ---------- */
+/* Todos os dias do mês com o mesmo fundo cheio; dias com tarefas um tom mais
+   azulado; dias de outros meses transparentes. Sem faixa, degradê ou fim de
+   semana tingido. Hoje e o selecionado mantêm seus destaques. */
+@media (min-width: 761px) {
+  .agenda-workspace .month-calendar .calendar-day,
+  .agenda-workspace .month-calendar .calendar-day:nth-child(7n + 1),
+  .agenda-workspace .month-calendar .calendar-day:nth-child(7n),
+  .agenda-workspace .month-calendar .calendar-day:not(.has-tasks):not(.is-today):not(.selected) {
+    border: 1px solid transparent;
+    background: color-mix(in srgb, var(--raised) 70%, transparent);
+    box-shadow: none;
+  }
+
+  .agenda-workspace .month-calendar .calendar-day.has-tasks:not(.is-today):not(.outside),
+  .agenda-workspace .month-calendar .calendar-day.has-tasks.day-complete:not(.is-today) {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--accent) 9%, var(--raised));
+    box-shadow: none;
+  }
+
+  .agenda-workspace .month-calendar .calendar-day.outside,
+  .agenda-workspace .month-calendar .calendar-day.outside.has-tasks {
+    border: 1px solid transparent;
+    background: transparent;
+    opacity: .55;
+  }
+
+  .agenda-workspace .month-calendar .calendar-day:not(.has-tasks):not(.is-today) .day-number {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .agenda-workspace .month-calendar .calendar-day.has-tasks:not(.is-today) .day-number {
+    background: transparent;
+  }
+
+  .agenda-workspace .month-calendar .calendar-weekdays > span:first-child,
+  .agenda-workspace .month-calendar .calendar-weekdays > span:last-child {
+    color: inherit;
+  }
+
+  .agenda-workspace .month-calendar .calendar-day.selected:not(.is-today) {
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+}
+
+/* ---------- Filtro por tipo da lista: só no celular ---------- */
+@media (min-width: 761px) {
+  .list-filters .type-filter-control {
+    display: none;
+  }
+
+  .list-filters {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 760px) {
+  /* No celular os tipos do calendário ficam dentro da aba; aqui o filtro vira
+     uma pílula compacta, azul quando há um tipo escolhido. */
+  .list-filters .type-filter-control {
+    gap: 6px;
+    max-width: 62%;
+    height: 32px;
+    padding: 0 4px 0 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--raised) 70%, transparent);
+  }
+
+  .list-filters .type-filter-control > svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .list-filters .type-filter-control select {
+    height: 100%;
+    padding: 0 4px;
+    background-color: transparent;
+    color: var(--ink);
+    font-size: .72rem;
+    font-weight: 650;
+  }
+
+  .list-filters .type-filter-control.is-active {
+    border-color: var(--action);
+    background: color-mix(in srgb, var(--action) 18%, var(--raised));
+  }
 }

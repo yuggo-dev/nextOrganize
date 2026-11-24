@@ -1,4 +1,4 @@
-import { daysFromToday, isoDate, isOverdue } from "./schedule.js";
+import { daysFromToday, isMissed, isoDate, isOverdue } from "./schedule.js";
 import { expandRecurringTasks, recurringStart } from "./recurrence.js";
 
 export function buildPerformance(tasks, now, period = "all") {
@@ -17,7 +17,9 @@ export function buildPerformance(tasks, now, period = "all") {
   const total = filtered.length;
   const completed = filtered.filter(task => task.done).length;
   const overdue = filtered.filter(task => isOverdue(task, now)).length;
-  const open = total - completed;
+  // Regulares que não contam atraso e passaram do dia: não estão em aberto nem atrasadas.
+  const missed = filtered.filter(task => isMissed(task, now)).length;
+  const open = total - completed - missed;
   const byType = new Map();
 
   for (const task of filtered) {
@@ -51,7 +53,7 @@ export function buildPerformance(tasks, now, period = "all") {
   });
 
   return {
-    total, completed, overdue, open,
+    total, completed, overdue, open, missed,
     scheduled: open - overdue,
     completionRate: total ? Math.round(completed / total * 100) : 0,
     types: [...byType.values()].sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "pt-BR")),

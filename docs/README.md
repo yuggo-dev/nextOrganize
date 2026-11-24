@@ -10,6 +10,7 @@ configuração de credenciais e publicação na nuvem são etapas distintas.
 | [Branches e ambientes](branches.md) | Fluxo main/produção e desenvolvimento, commits e publicação |
 | [Ferramentas](tools.md) | Tecnologias usadas, responsabilidade de cada uma e comandos do projeto |
 | [Arquitetura](architecture.md) | Papel de cada ambiente, camadas, fluxos, bancos e autenticação |
+| [Histórico](historico.md) | Mudanças do app por data, e o que está planejado |
 | [Estado da integração](migration-status.md) | O que está implementado, o que foi validado e o que falta na nuvem |
 | [Supabase: produção](supabase.md) | Publicação de schema, função e frontend; secrets, conexão e backup |
 | [Autenticação](domains/auth.md) | Cadastro, login, sessão e contrato HTTP |

@@ -9,7 +9,7 @@ if (existsSync(path.join(root, '.env'))) process.loadEnvFile(path.join(root, '.e
 const tables = {
   users: ['id', 'name', 'email', 'password_hash'],
   task_types: ['id', 'user_id', 'name', 'color', 'icon'],
-  tasks: ['id', 'title', 'category', 'priority', 'due', 'done', 'created_at', 'user_id', 'due_time', 'type_id', 'recurrence', 'recurrence_until', 'recurrence_days'],
+  tasks: ['id', 'title', 'category', 'priority', 'due', 'done', 'created_at', 'user_id', 'due_time', 'type_id', 'recurrence', 'recurrence_until', 'recurrence_days', 'notify_time', 'tracks_overdue'],
   task_occurrences: ['task_id', 'due', 'done', 'skipped'],
 };
 const dryRun = process.argv.includes('--dry-run');

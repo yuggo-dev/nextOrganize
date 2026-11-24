@@ -1,55 +1,68 @@
 import { useEffect, useRef, useState } from "react";
-import { FiEdit3, FiTrash2, FiMoreHorizontal, FiRepeat, FiClock, FiXCircle, FiPlus, FiMapPin } from "react-icons/fi";
+import { FiEdit3, FiTrash2, FiMoreHorizontal, FiClock, FiXCircle, FiPlus, FiBell, FiCalendar } from "react-icons/fi";
 import { shiftDate, scheduledOn } from "../model/recurrence.js";
 import TypeIcon from "../../task-types/icons.jsx";
-import { isOverdue } from "../model/schedule.js";
+import { isMissed, isOverdue, isPending, isRegular, isoDate } from "../model/schedule.js";
+import TodayChip from "../../../shared/components/TodayChip.jsx";
 
-const priorities = { 1: "Alta", 2: "Média", 3: "Baixa" };
+const weekdayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-function WeekTrack({ task }) {
+function scheduleText(task) {
+  if (task.recurrence !== "weekly") return "Todo dia";
+  const days = [...(task.recurrence_days || [])].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
+  if (days.length === 7) return "Todo dia";
+  return days.map(day => weekdayNames[day]).join(" · ");
+}
+
+function useCelebration(done) {
+  const previousDone = useRef(done);
+  const [celebrating, setCelebrating] = useState(false);
+  useEffect(() => {
+    const justCompleted = done && !previousDone.current;
+    previousDone.current = done;
+    if (!done) setCelebrating(false);
+    if (!justCompleted) return;
+    setCelebrating(true);
+    const timer = setTimeout(() => setCelebrating(false), 1100);
+    return () => clearTimeout(timer);
+  }, [done]);
+  return celebrating;
+}
+
+// A semana da tarefa em sete pontos, de segunda a domingo; o rótulo de cada
+// ponto (data e situação) fica no title e no aria-label.
+function WeekDots({ task }) {
   const weekday = new Date(`${task.due}T12:00:00Z`).getUTCDay();
   const monday = shiftDate(task.due, -((weekday + 6) % 7));
   const history = new Map((task.occurrences || []).map(day => [day.due, day]));
-  return <div className="week-track" role="group" aria-label="Ocorrências da semana desta tarefa">
-    <span className="week-track-label">Seu ritmo</span>
-    {["S", "T", "Q", "Q", "S", "S", "D"].map((label, index) => {
+  return <div className="week-dots" role="group" aria-label="Ocorrências da semana desta tarefa">
+    {Array.from({ length: 7 }, (_, index) => {
       const date = shiftDate(monday, index);
       const planned = date >= (task.series_start || task.due) && (!task.recurrence_until || date <= task.recurrence_until) && scheduledOn(task, date);
       const entry = history.get(date);
       const status = !planned ? "fora da programação" : entry?.skipped ? "removida" : entry?.done ? "concluída" : "em aberto";
       const description = `${date.split("-").reverse().join("/")}: ${status}`;
-      return <span key={date} role="img" aria-label={description} title={description} className={`week-step${planned ? " planned" : ""}${planned && entry?.done && !entry.skipped ? " achieved" : ""}${entry?.skipped ? " skipped" : ""}${date === task.due ? " selected-step" : ""}`}>
-        {planned && entry?.done && !entry.skipped ? "✓" : entry?.skipped ? "−" : label}
-      </span>;
+      return <span key={date} role="img" aria-label={description} title={description} className={`week-step${planned ? " planned" : ""}${planned && entry?.done && !entry.skipped ? " achieved" : ""}${entry?.skipped ? " skipped" : ""}${date === task.due ? " selected-step" : ""}`} />;
     })}
   </div>;
 }
 
-function TaskCard({ task, now, pending, onToggle, onDelete, onDeleteSeries, onEdit, focused }) {
-  const previousDone = useRef(task.done);
-  const [celebrating, setCelebrating] = useState(false);
-  useEffect(() => {
-    const justCompleted = task.done && !previousDone.current;
-    previousDone.current = task.done;
-    if (!task.done) setCelebrating(false);
-    if (!justCompleted) return;
-    setCelebrating(true);
-    const timer = setTimeout(() => setCelebrating(false), 1100);
-    return () => clearTimeout(timer);
-  }, [task.done]);
-  const late = isOverdue(task, now);
-  const daily = ["daily", "weekly"].includes(task.recurrence);
-  const date = task.due ? task.due.split("-").reverse().slice(0, 2).join("/") : "Sem prazo";
+const shortDate = due => due.split("-").reverse().slice(0, 2).join("/");
 
+// Card enxuto, igual para regulares e pontuais: checkbox, ícone do tipo, título
+// e uma linha de detalhes; ações ficam no menu de reticências.
+// Regulares mostram a programação, o horário de notificação, o combo e a semana.
+// Pontuais mostram o horário de conclusão (quando houver) e a data.
+function TaskCard({ task, now, pending, onToggle, onDelete, onDeleteSeries, onEdit, focused, showDate }) {
+  const celebrating = useCelebration(task.done);
+  const regular = isRegular(task);
+  const late = isOverdue(task, now);
+  const missed = isMissed(task, now);
+  const closeMenu = event => { event.currentTarget.closest("details").open = false; };
   return (
-    <div className={`agenda-entry${daily ? " daily-entry" : ""}`} style={{ "--type-color": task.category_color }}>
-      {!daily && <div className="agenda-time">
-        {task.due_time ? <time dateTime={`${task.due}T${task.due_time}`}>{task.due_time}</time> : <span>{task.due ? "Sem horário" : "Sem prazo"}</span>}
-        <span className="agenda-rule" aria-hidden="true" />
-        <span className="agenda-date">{date}</span>
-      </div>}
+    <div className="agenda-entry regular-entry" style={{ "--type-color": task.category_color }}>
       <article
-        className={`task-card${focused ? " focus-task" : ""}${celebrating ? " just-completed" : ""}${late ? " overdue" : ""}${task.done ? " completed" : ""}`}
+        className={`regular-card${focused ? " regular-next" : ""}${celebrating ? " just-completed" : ""}${late ? " overdue" : ""}${missed ? " missed" : ""}${task.done ? " completed" : ""}`}
         aria-busy={pending}
       >
         {celebrating && <span className="completion-spark" aria-hidden="true">✦</span>}
@@ -62,54 +75,51 @@ function TaskCard({ task, now, pending, onToggle, onDelete, onDeleteSeries, onEd
             aria-label={`${task.done ? "Reabrir" : "Concluir"} ${task.title}`}
           />
         </label>
-        <div className="task-content">
-          <div className="task-identity">
-            <span className="task-theme-icon" title={task.category}><TypeIcon icon={task.category_icon} name={task.category} /></span>
-            <div className="task-identity-copy">
-          {focused && !task.done && <span className="task-focus-label">✦ Seu próximo passo</span>}
-          <div className="task-topline">
-            <span className="task-title" title={task.title}>{task.title}</span>
-          </div>
-          <div className="task-details">
-            <span className="task-type" title={task.category}>
-              <span>{task.category}</span>
-            </span>
-            <span className={`priority priority-${task.priority}`} title={`Prioridade ${priorities[task.priority].toLowerCase()}`}>
-              {priorities[task.priority]}
-            </span>
-            {late && <span className="overdue-badge">Atrasada</span>}
-            {task.done && <span className="done-label">✓ Você conseguiu</span>}
-          </div>
-            </div>
-          </div>
-          {daily && <div className="daily-card-meta">
-            {task.recurrence === "weekly" && <span className="task-type" title="Dias programados">{(task.recurrence_days || []).map(day => ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][day]).join(" · ")}</span>}
-            <span className="daily-label"><FiRepeat aria-hidden="true" /> {task.recurrence === "weekly" ? "Periódica" : "Diária"}</span>
-            {task.streak > 0 && <span className="streak-label" title={`Combo atual de ${task.streak} ${task.streak === 1 ? "dia cumprido" : "dias cumpridos"} em sequência`}>Combo · {task.streak}{task.recurrence === "weekly" ? "x" : "d"}</span>}
-            <span className="daily-card-deadline">
-              {task.due_time ? <time dateTime={`${task.due}T${task.due_time}`} title="Horário de conclusão"><FiClock aria-hidden="true" /> {task.due_time}</time> : <span>Sem horário</span>}
-              <span>· {date}</span>
-            </span>
-          </div>}
-          {daily && <WeekTrack task={task} />}
+        <span className="regular-icon" title={task.category}><TypeIcon icon={task.category_icon} name={task.category} /></span>
+        <div className="regular-body">
+          <span className="task-title" title={task.title}>{task.title}</span>
+          <span className="regular-meta">
+            {regular ? <>
+              <span>{scheduleText(task)}</span>
+              {task.notify_time && <span className="regular-notify" title="Horário de notificação"><FiBell aria-hidden="true" />{task.notify_time}</span>}
+            </> : <>
+              {task.due_time
+                ? <time dateTime={`${task.due}T${task.due_time}`} title="Horário de conclusão"><FiClock aria-hidden="true" />{task.due_time}</time>
+                : !task.due && <span>Sem prazo</span>}
+              {task.priority === 1 && <span className="regular-priority">Prioridade alta</span>}
+            </>}
+            {task.due && showDate && (task.due === isoDate(now)
+              ? <TodayChip className="today-chip-small" />
+              : <span title="Data"><FiCalendar aria-hidden="true" />{shortDate(task.due)}</span>)}
+            {late && <span className="regular-late">Atrasada</span>}
+            {missed && <span className="regular-missed">Não feita</span>}
+          </span>
         </div>
-        <div className="task-card-actions">
-          <button type="button" className="edit-task task-action" disabled={pending} onClick={() => onEdit(task)} aria-label={`Editar ou mover ${task.title}`} title="Editar ou mover tarefa"><FiEdit3 aria-hidden="true" /><span>Editar</span></button>
-          {task.source_id ? <details className="task-more" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false; }}>
-            <summary aria-label={`Mais ações de ${task.title}`} title="Mais ações"><FiMoreHorizontal aria-hidden="true" /></summary>
-            <div className="task-action-menu">
-              <button type="button" disabled={pending} onClick={event => { event.currentTarget.closest("details").open = false; onDelete(task); }}><FiXCircle aria-hidden="true" />Remover só deste dia</button>
-              <button type="button" disabled={pending} onClick={event => { event.currentTarget.closest("details").open = false; onDeleteSeries(task); }}><FiTrash2 aria-hidden="true" />Excluir repetição e histórico</button>
-            </div>
-          </details> : <button type="button" className="delete-task task-action" disabled={pending} aria-label={`Excluir ${task.title}`} title="Excluir tarefa" onClick={() => onDelete(task)}><FiTrash2 aria-hidden="true" /></button>}
-        </div>
+        {regular && task.streak > 0 && <span className="regular-streak" title={`Combo atual de ${task.streak} ${task.streak === 1 ? "vez cumprida" : "vezes cumpridas"} em sequência`}>
+          {task.streak}{task.recurrence === "weekly" ? "x" : "d"}
+        </span>}
+        {regular && <WeekDots task={task} />}
+        <details className="task-more" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false; }}>
+          <summary aria-label={`Ações de ${task.title}`} title="Ações"><FiMoreHorizontal aria-hidden="true" /></summary>
+          <div className="task-action-menu">
+            <button type="button" className="menu-edit" disabled={pending} onClick={event => { closeMenu(event); onEdit(task); }}><FiEdit3 aria-hidden="true" />Editar ou mover</button>
+            {task.source_id ? <>
+              <button type="button" disabled={pending} onClick={event => { closeMenu(event); onDelete(task); }}><FiXCircle aria-hidden="true" />Remover só deste dia</button>
+              <button type="button" disabled={pending} onClick={event => { closeMenu(event); onDeleteSeries(task); }}><FiTrash2 aria-hidden="true" />Excluir repetição e histórico</button>
+            </> : <button type="button" disabled={pending} onClick={event => { closeMenu(event); onDelete(task); }}><FiTrash2 aria-hidden="true" />Excluir</button>}
+          </div>
+        </details>
       </article>
     </div>
   );
 }
 
+function GroupLabel({ id, title, detail }) {
+  return <h3 className="list-group-label" id={id}><span>{title}</span><small>{detail}</small></h3>;
+}
+
 export default function TaskList({
-  tasks, now, loading, searching, viewKey,
+  tasks, now, loading, searching, viewKey, singleDay,
   onToggle, onDelete, onDeleteSeries, onEdit, pendingIds, onAdd, progressTasks,
 }) {
   const space = useRef(null);
@@ -120,22 +130,21 @@ export default function TaskList({
   const total = progressTasks?.length || 0;
   const completed = progressTasks?.filter(task => task.done).length || 0;
   const percent = total ? Math.round(completed / total * 100) : 0;
-  const nextTask = tasks.find(task => !task.done && !isOverdue(task, now)) || tasks.find(task => !task.done);
-  const dailyTasks = tasks.filter(task => ["daily", "weekly"].includes(task.recurrence));
-  const otherTasks = tasks.filter(task => !["daily", "weekly"].includes(task.recurrence));
-  const renderCard = task => (
-    <TaskCard
-      key={task.id}
-      task={task}
-      focused={task.id === nextTask?.id}
-      now={now}
-      pending={pendingIds.has(task.id)}
-      onEdit={onEdit}
-      onToggle={onToggle}
-      onDelete={onDelete}
-      onDeleteSeries={onDeleteSeries}
-    />
-  );
+  const nextTask = tasks.find(task => isPending(task, now) && !isOverdue(task, now)) || tasks.find(task => isPending(task, now));
+  const regularTasks = tasks.filter(isRegular);
+  const oneOffTasks = tasks.filter(task => !isRegular(task));
+  const renderCard = task => <TaskCard
+    key={task.id}
+    task={task}
+    focused={task.id === nextTask?.id}
+    showDate={!singleDay}
+    now={now}
+    pending={pendingIds.has(task.id)}
+    onEdit={onEdit}
+    onToggle={onToggle}
+    onDelete={onDelete}
+    onDeleteSeries={onDeleteSeries}
+  />;
 
   return (
     <div
@@ -157,22 +166,14 @@ export default function TaskList({
         <span className="momentum-decoration" aria-hidden="true">✦</span>
       </section>}
       {loading ? <div className="empty-state" role="status">Carregando tarefas…</div> : tasks.length ? <>
-        {dailyTasks.length > 0 && <details className="task-group daily-task-group" open>
-          <summary className="task-group-heading" title="Expandir ou recolher as atividades regulares">
-            <span className="daily-group-title"><FiRepeat aria-hidden="true" /> Atividades regulares</span>
-            <span className="daily-group-meta">
-              <span>{dailyTasks.filter(task => task.done).length}/{dailyTasks.length} concluídas</span>
-              <i className="daily-group-chevron" aria-hidden="true" />
-            </span>
-          </summary>
-          <div className="daily-group-content">{dailyTasks.map(renderCard)}</div>
-        </details>}
-        {otherTasks.length > 0 && <section className="task-group" aria-label="Atividades pontuais">
-          {<header className="task-group-heading">
-            <h3><FiMapPin aria-hidden="true" /> Atividades pontuais</h3>
-            <span>{otherTasks.length} atividades</span>
-          </header>}
-          {otherTasks.map(renderCard)}
+        {/* Uma lista só: regulares e depois pontuais, separadas por subtítulos discretos. */}
+        {regularTasks.length > 0 && <section className="list-group" aria-labelledby="group-regular">
+          <GroupLabel id="group-regular" title="Regulares" detail={`${regularTasks.filter(task => task.done).length}/${regularTasks.length}`} />
+          {regularTasks.map(renderCard)}
+        </section>}
+        {oneOffTasks.length > 0 && <section className="list-group" aria-labelledby="group-one-off">
+          <GroupLabel id="group-one-off" title="Pontuais" detail={`${oneOffTasks.filter(task => task.done).length}/${oneOffTasks.length}`} />
+          {oneOffTasks.map(renderCard)}
         </section>}
       </> : (
           <div className="empty-state" role="status">

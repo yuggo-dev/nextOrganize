@@ -2,7 +2,8 @@ import { postgresTaskRepository } from "../../infrastructure/postgres-repositori
 const select = `SELECT tasks.*, COALESCE(task_types.name, tasks.category) AS category,
   COALESCE(task_types.color, '#64748b') AS category_color, task_types.icon AS category_icon
   FROM tasks LEFT JOIN task_types ON task_types.id = tasks.type_id AND task_types.user_id = tasks.user_id`;
-const serialize = ({ user_id, ...task }) => ({ ...task, done: !!task.done, recurrence_days: JSON.parse(task.recurrence_days || "[]") });
+const serialize = ({ user_id, ...task }) => ({ ...task, done: !!task.done, tracks_overdue: task.tracks_overdue !== 0,
+  recurrence_days: JSON.parse(task.recurrence_days || "[]") });
 
 export function taskRepository(db) {
   if (db.dialect === "postgres") return postgresTaskRepository(db);
@@ -21,15 +22,17 @@ export function taskRepository(db) {
       return task && withHistory(task);
     },
     create(task, userId) {
-      const result = db.prepare(`INSERT INTO tasks (title, category, priority, due, due_time, type_id, recurrence, recurrence_until, recurrence_days, user_id)
-        VALUES (@title, @category, @priority, @due, @due_time, @type_id, @recurrence, @recurrence_until, @recurrence_days, @userId)`).run({ ...task, recurrence_days: JSON.stringify(task.recurrence_days), userId });
+      const result = db.prepare(`INSERT INTO tasks (title, category, priority, due, due_time, notify_time, tracks_overdue, type_id, recurrence, recurrence_until, recurrence_days, user_id)
+        VALUES (@title, @category, @priority, @due, @due_time, @notify_time, @tracks_overdue, @type_id, @recurrence, @recurrence_until, @recurrence_days, @userId)`)
+        .run({ ...task, recurrence_days: JSON.stringify(task.recurrence_days), tracks_overdue: task.tracks_overdue ? 1 : 0, userId });
       return this.get(result.lastInsertRowid, userId);
     },
     update(id, task, userId) {
       db.prepare(`UPDATE tasks SET title=@title, category=@category, priority=@priority, due=@due,
-        due_time=@due_time, type_id=@type_id, done=@done, recurrence=@recurrence,
+        due_time=@due_time, notify_time=@notify_time, tracks_overdue=@tracks_overdue, type_id=@type_id, done=@done, recurrence=@recurrence,
         recurrence_until=@recurrence_until, recurrence_days=@recurrence_days WHERE id=@id AND user_id=@userId`)
-        .run({ ...task, recurrence_days: JSON.stringify(task.recurrence_days), done: task.done ? 1 : 0, id, userId });
+        .run({ ...task, recurrence_days: JSON.stringify(task.recurrence_days), done: task.done ? 1 : 0,
+          tracks_overdue: task.tracks_overdue ? 1 : 0, id, userId });
       return this.get(id, userId);
     },
     saveOccurrence(id, date, done, skipped, userId) {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calendarDays, daysFromToday, isOverdue, isoDate, sortTasks } from "./schedule.js";
+import { calendarDays, daysFromToday, isMissed, isOverdue, isPending, isoDate, sortTasks } from "./schedule.js";
 
 test("today comes before future and overdue tasks and time breaks ties", () => {
   const now = new Date(2026, 10, 16, 12, 0);
@@ -12,6 +12,30 @@ test("today comes before future and overdue tasks and time breaks ties", () => {
   assert.equal(isOverdue(entries[4], now), true);
   assert.equal(isOverdue(task(7, "2026-11-16", null), now), false);
   assert.equal(isOverdue(task(8, "2026-11-15", "09:00", true), now), false);
+});
+
+test("regulares só atrasam depois do dia e quando contam atraso; senão ficam não feitas", () => {
+  const now = new Date(2026, 10, 16, 23, 0);
+  const regular = (due, tracks_overdue, done = false) => ({ recurrence: "daily", due, tracks_overdue, done, notify_time: "07:00", priority: 2 });
+  // Durante o próprio dia, mesmo depois do horário de notificação, não atrasa.
+  assert.equal(isOverdue(regular("2026-11-16", true), now), false);
+  assert.equal(isMissed(regular("2026-11-16", false), now), false);
+  // Dia passado: atrasada ou não feita, conforme a escolha.
+  assert.equal(isOverdue(regular("2026-11-15", true), now), true);
+  assert.equal(isMissed(regular("2026-11-15", true), now), false);
+  assert.equal(isOverdue(regular("2026-11-15", false), now), false);
+  assert.equal(isMissed(regular("2026-11-15", false), now), true);
+  assert.equal(isPending(regular("2026-11-15", false), now), false);
+  assert.equal(isPending(regular("2026-11-15", true), now), true);
+  // Concluída nunca é atrasada nem não feita.
+  assert.equal(isMissed(regular("2026-11-15", false, true), now), false);
+  // Não feitas vão depois das atrasadas e antes das concluídas.
+  const order = sortTasks([
+    { id: 1, ...regular("2026-11-15", false) },
+    { id: 2, ...regular("2026-11-15", true) },
+    { id: 3, ...regular("2026-11-15", true, true) },
+  ], now).map(task => task.id);
+  assert.deepEqual(order, [2, 1, 3]);
 });
 
 test("calendar includes 42 consecutive local dates and handles leap years and seven-day boundaries", () => {

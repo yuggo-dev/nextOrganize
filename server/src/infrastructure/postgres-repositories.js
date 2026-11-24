@@ -33,9 +33,12 @@ export function postgresTypeRepository(db) {
 }
 const select = `SELECT t.*, COALESCE(ty.name,t.category) AS category, COALESCE(ty.color,'#64748b') AS category_color, ty.icon AS category_icon
  FROM tarefas.tasks t LEFT JOIN tarefas.task_types ty ON ty.id=t.type_id AND ty.user_id=t.user_id`;
+const taskFields = ['title','category','priority','due','due_time','notify_time','tracks_overdue','type_id','recurrence','recurrence_until','recurrence_days'];
+const taskValues = task => taskFields.map(f => f==='recurrence_days' ? JSON.stringify(task[f]) : f==='tracks_overdue' ? (task[f] ? 1 : 0) : task[f]);
 export function postgresTaskRepository(db) {
   async function history({user_id, ...task}) {
     task.done = !!task.done;
+    task.tracks_overdue = task.tracks_overdue !== 0;
     task.recurrence_days = JSON.parse(task.recurrence_days || "[]");
     if (task.recurrence !== 'none') task.occurrences = (await db.query('SELECT due,done,skipped FROM tarefas.task_occurrences WHERE task_id=$1 ORDER BY due',[task.id])).rows.map(row=>({...row,done:!!row.done,skipped:!!row.skipped}));
     return task;
@@ -48,13 +51,13 @@ export function postgresTaskRepository(db) {
     get,
     list: async userId => Promise.all((await db.query(`${select} WHERE t.user_id=$1 ORDER BY t.id DESC`,[userId])).rows.map(history)),
     async create(task,userId) {
-      const fields = ['title','category','priority','due','due_time','type_id','recurrence','recurrence_until','recurrence_days'];
-      const row = await one(db,`INSERT INTO tarefas.tasks(${fields.join(',')},user_id) VALUES(${fields.map((_,i)=>`$${i+1}`).join(',')},$10) RETURNING id`,[...fields.map(f=>f==='recurrence_days'?JSON.stringify(task[f]):task[f]),userId]);
+      const n = taskFields.length;
+      const row = await one(db,`INSERT INTO tarefas.tasks(${taskFields.join(',')},user_id) VALUES(${taskFields.map((_,i)=>`$${i+1}`).join(',')},$${n+1}) RETURNING id`,[...taskValues(task),userId]);
       return get(row.id,userId);
     },
     async update(id,task,userId) {
-      const fields = ['title','category','priority','due','due_time','type_id','recurrence','recurrence_until','recurrence_days'];
-      await db.query(`UPDATE tarefas.tasks SET ${fields.map((f,i)=>`${f}=$${i+1}`).join(',')},done=$10 WHERE id=$11 AND user_id=$12`,[...fields.map(f=>f==='recurrence_days'?JSON.stringify(task[f]):task[f]),task.done?1:0,id,userId]);
+      const n = taskFields.length;
+      await db.query(`UPDATE tarefas.tasks SET ${taskFields.map((f,i)=>`${f}=$${i+1}`).join(',')},done=$${n+1} WHERE id=$${n+2} AND user_id=$${n+3}`,[...taskValues(task),task.done?1:0,id,userId]);
       return get(id,userId);
     },
     async saveOccurrence(id,date,done,skipped,userId) {

@@ -4,6 +4,12 @@ import { taskTypeRepository } from "../task-types/repository.js";
 import { httpError } from "../../shared/http.js";
 import { validDate, validateOccurrence } from "./validation.js";
 
+const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
+const validTime = value => typeof value === "string" && timePattern.test(value);
+
+// Pontuais usam due_time (horário de conclusão, opcional). Regulares não têm
+// horário de conclusão: usam notify_time (horário de notificação, opcional) e
+// tracks_overdue, que diz se um dia passado sem conclusão conta como atrasado.
 export function validateTask(body, current = {}) {
   const title = body.title === undefined ? current.title : String(body.title ?? "").trim().slice(0, 200);
   if (!title) throw httpError(400, "Título obrigatório.");
@@ -14,12 +20,21 @@ export function validateTask(body, current = {}) {
     throw httpError(400, "Informe uma data válida.");
   }
   const dueTime = body.due_time === undefined ? current.due_time || null : body.due_time || null;
-  if (dueTime && (typeof dueTime !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(dueTime))) {
+  if (dueTime && !validTime(dueTime)) {
     throw httpError(400, "Informe um horário no formato HH:mm.");
   }
-  if (!due && dueTime && body.due_time) throw httpError(400, "Defina a data para usar um horário.");
   const recurrence = body.recurrence ?? current.recurrence ?? "none";
   if (!["none", "daily", "weekly"].includes(recurrence)) throw httpError(400, "Escolha uma repetição válida.");
+  const recurring = recurrence !== "none";
+  if (!recurring && !due && dueTime && body.due_time) throw httpError(400, "Defina a data para usar um horário.");
+  // Clientes anteriores mandavam o horário das regulares em due_time: ele vira notify_time.
+  const notifyInput = body.notify_time !== undefined ? body.notify_time
+    : recurring && body.due_time !== undefined ? body.due_time
+    : current.notify_time;
+  const notifyTime = recurring ? notifyInput || null : null;
+  if (notifyTime && !validTime(notifyTime)) throw httpError(400, "Informe o horário de notificação no formato HH:mm.");
+  const tracksInput = body.tracks_overdue === undefined ? current.tracks_overdue ?? true : body.tracks_overdue;
+  if (typeof tracksInput !== "boolean") throw httpError(400, "Informe se a atividade conta atraso.");
   const until = body.recurrence_until === undefined ? current.recurrence_until || null : body.recurrence_until || null;
   if (recurrence !== "none" && !due) throw httpError(400, "Informe a data inicial da tarefa periódica.");
   if (recurrence !== "none" && until && (!validDate(until) || until < due)) {
@@ -37,7 +52,8 @@ export function validateTask(body, current = {}) {
     first.setUTCDate(first.getUTCDate() + offset);
     if (until && first.toISOString().slice(0, 10) > until) throw httpError(400, "O período precisa incluir pelo menos um dos dias selecionados.");
   }
-  return { title, priority, due, due_time: due ? dueTime : null,
+  return { title, priority, due, due_time: due && !recurring ? dueTime : null,
+    notify_time: notifyTime, tracks_overdue: tracksInput,
     recurrence, recurrence_until: recurrence !== "none" ? until : null, recurrence_days: days,
     done: body.done === undefined ? !!current.done : !!body.done };
 }

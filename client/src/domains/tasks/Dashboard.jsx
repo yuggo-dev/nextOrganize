@@ -1,10 +1,11 @@
 import { FiPlus, FiTag, FiSliders, FiCalendar, FiLayers, FiCheckSquare, FiSearch, FiSun, FiLogOut, FiHome, FiBarChart2, FiChevronDown, FiFilter } from "react-icons/fi";
 import TypeIcon from "../task-types/icons.jsx";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTasks } from "./hooks/useTasks.js";
-import { calendarDays, daysFromToday, isoDate, isOverdue, sortTasks } from "./model/schedule.js";
+import { calendarDays, daysFromToday, isoDate, isOverdue, isPending, relativeDayLabel, sortTasks } from "./model/schedule.js";
 import { expandRecurringTasks, recurringStart, shiftDate, scheduledOn } from "./model/recurrence.js";
 import Calendar from "./components/Calendar.jsx";
+import SelectedDayLine from "./components/SelectedDayLine.jsx";
 import TaskDialog from "./components/TaskDialog.jsx";
 import TaskList from "./components/TaskList.jsx";
 import TypeManager from "../task-types/TypeManager.jsx";
@@ -19,6 +20,22 @@ export default function Dashboard({ user, onLogout, loggingOut, sessionError }) 
   const [filter, setFilter] = useState("day");
   const [typeFilter, setTypeFilter] = useState("");
   const [hideDone, setHideDone] = useState(false);
+  // Só tem efeito no celular, onde a lista vem primeiro e o calendário começa recolhido.
+  const [calendarCollapsed, setCalendarCollapsed] = useState(true);
+  // Fechar a aba do calendário no celular: primeiro a animação de descida,
+  // depois o estado recolhido. Sem animação (computador ou movimento reduzido)
+  // recolhe na hora.
+  const [calendarClosing, setCalendarClosing] = useState(false);
+  const closeTimer = useRef(null);
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
+  const closeCalendar = () => {
+    if (calendarCollapsed || calendarClosing) return;
+    const animated = window.matchMedia("(max-width: 760px) and (prefers-reduced-motion: no-preference)").matches;
+    if (!animated) { setCalendarCollapsed(true); return; }
+    setCalendarClosing(true);
+    closeTimer.current = setTimeout(() => { setCalendarCollapsed(true); setCalendarClosing(false); }, 220);
+  };
+  const toggleCalendar = () => calendarCollapsed ? setCalendarCollapsed(false) : closeCalendar();
   const [dialog, setDialog] = useState(null);
   const [pendingIds, setPendingIds] = useState(new Set());
   const [search, setSearch] = useState("");
@@ -32,7 +49,7 @@ export default function Dashboard({ user, onLogout, loggingOut, sessionError }) 
   const tasks = expandRecurringTasks(records, recurringStart(records, today), shiftDate(today, 7), now);
   const calendarDates = calendarDays(month);
   const calendarTasks = expandRecurringTasks(records, isoDate(calendarDates[0]), isoDate(calendarDates.at(-1)), now);
-  const open = tasks.filter(task => !task.done);
+  const open = tasks.filter(task => isPending(task, now));
   const todayCount = open.filter(task => task.due === today).length;
   const todayTasks = tasks.filter(task => task.due === today);
   const todayCompleted = todayTasks.filter(task => task.done).length;
@@ -70,11 +87,9 @@ export default function Dashboard({ user, onLogout, loggingOut, sessionError }) 
   const visible = sortTasks(source.filter(task => {
     if (filter === "day") return task.due === selected;
     if (filter === "week") return task.due && daysFromToday(task.due, now) > 0 && daysFromToday(task.due, now) <= 7 && !task.done;
-    if (filter === "open") return !task.done;
+    if (filter === "open") return isPending(task, now);
     return true;
   }), now);
-  const [year, selectedMonth, day] = selected.split("-").map(Number);
-  const selectedDate = new Date(year, selectedMonth - 1, day);
   const titles = { week: "Próximos 7 dias", open: "Tarefas em aberto" };
   const greeting = now.getHours() < 12 ? "Bom dia" : now.getHours() < 18 ? "Boa tarde" : "Boa noite";
   const firstName = user.name.trim().split(/\s+/)[0];
@@ -112,18 +127,19 @@ export default function Dashboard({ user, onLogout, loggingOut, sessionError }) 
       <div className="brand">
         <div>
           <h1>{greeting}, {firstName}!</h1>
-          <p>Sua agenda · {now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</p>
+          <p className="topbar-agenda">Sua agenda</p>
+          <SelectedDayLine selected={selected} today={today} className="topbar-day-line" />
         </div>
       </div>
       <div className="agenda-actions">
         <details className="agenda-type-menu" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false; }}>
-          <summary><FiTag aria-hidden="true" /> Tipos <FiChevronDown aria-hidden="true" /></summary>
+          <summary aria-label="Tipos" title="Tipos"><FiTag aria-hidden="true" /> <span className="action-label">Tipos</span> <FiChevronDown aria-hidden="true" /></summary>
           <div className="agenda-type-options">
             <button type="button" disabled={loading || !types.length} onClick={event => { event.currentTarget.closest("details").open = false; setDialog("manage-types"); }}><FiSliders aria-hidden="true" /> Personalizar tipos</button>
             <button type="button" disabled={loading} onClick={event => { event.currentTarget.closest("details").open = false; setDialog("type"); }}><FiPlus aria-hidden="true" /> Novo tipo</button>
           </div>
         </details>
-        <button type="button" className="main" disabled={loading} onClick={() => setDialog("task")}><FiPlus aria-hidden="true" /> Nova tarefa</button>
+        <button type="button" className="main" disabled={loading} aria-label="Nova tarefa" title="Nova tarefa" onClick={() => setDialog("task")}><FiPlus aria-hidden="true" /> <span className="action-label">Nova tarefa</span></button>
       </div>
     </header>
 
@@ -145,20 +161,28 @@ export default function Dashboard({ user, onLogout, loggingOut, sessionError }) 
           <input type="search" aria-label="Buscar atividades" placeholder="Buscar na agenda…" value={search} onChange={event => setSearch(event.target.value)} />
         </label>
       </div>
-      <Calendar types={types} selectedType={typeFilter} onTypeFilter={setTypeFilter} month={month} selected={selected} today={today} tasks={calendarTasks.filter(matchesFilters)} onMonthChange={setMonth} onSelect={selectDay} />
+      <Calendar types={types} selectedType={typeFilter} onTypeFilter={setTypeFilter}
+        collapsed={calendarCollapsed} closing={calendarClosing} onToggleCollapsed={toggleCalendar} month={month} selected={selected} today={today} tasks={calendarTasks.filter(matchesFilters)} onMonthChange={setMonth}
+        onSelect={value => { selectDay(value); closeCalendar(); }} />
+      {/* No celular o calendário abre como uma aba sobre a lista; tocar fora fecha. */}
+      {!calendarCollapsed && <button type="button" className={`calendar-scrim${calendarClosing ? " is-closing" : ""}`} aria-label="Fechar calendário" tabIndex={-1} onClick={closeCalendar} />}
       <section className="day-panel panel" aria-label="Lista de tarefas">
         <div className="day-heading">
           <div>
-            <h2>{filter === "day" ? "Programação do dia" : titles[filter]}</h2>
-            <p>{filter === "day" ? selectedDate.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" }) : "Suas atividades"}</p>
+            <h2>{filter !== "day" ? titles[filter] : { Hoje: "Programação de hoje", Amanhã: "Programação de amanhã", Ontem: "Programação de ontem" }[relativeDayLabel(selected, now)] || "Programação do dia"}</h2>
+            {/* A data por extenso do dia selecionado fica no cabeçalho do calendário,
+                que acompanha a lista; aqui só o atalho de volta quando não é hoje. */}
+            {filter !== "day" ? <p>Suas atividades</p> : selected !== today && <p className="day-heading-date">
+              <button type="button" className="back-to-today" onClick={() => selectDay(today)}>Voltar para hoje</button>
+            </p>}
           </div>
           <span className="task-count">{visible.length}</span>
         </div>
-        <div className="list-filters"><div className="type-filter-control">{typeFilter ? <TypeIcon icon={types.find(type => String(type.id) === typeFilter)?.icon} name={types.find(type => String(type.id) === typeFilter)?.name} /> : <FiFilter aria-hidden="true" />}<select aria-label="Filtrar por tipo" value={typeFilter} onChange={event => setTypeFilter(event.target.value)}>
+        <div className="list-filters">{/* Filtro por tipo da lista: só no celular; no computador os tipos ficam no topo do calendário. */}<div className={`type-filter-control${typeFilter ? " is-active" : ""}`}>{typeFilter ? <TypeIcon icon={types.find(type => String(type.id) === typeFilter)?.icon} name={types.find(type => String(type.id) === typeFilter)?.name} /> : <FiFilter aria-hidden="true" />}<select aria-label="Filtrar por tipo" value={typeFilter} onChange={event => setTypeFilter(event.target.value)}>
           <option value="">Todos os tipos</option>{types.map(type => <option key={type.id} value={type.id}>{type.name}</option>)}
         </select></div><label><input type="checkbox" checked={hideDone} onChange={event => setHideDone(event.target.checked)} />Ocultar concluídas</label></div>
-        <TaskList progressTasks={filter === "day" ? expandRecurringTasks(records, selected, selected, now).filter(task =>
-          (!typeFilter || String(task.type_id) === typeFilter) && (!query || `${task.title} ${task.category}`.toLocaleLowerCase("pt-BR").includes(query))) : undefined} tasks={visible} now={now} loading={loading} searching={!!query}
+        <TaskList progressTasks={filter === "day" ? expandRecurringTasks(records, selected, selected, now).filter(task => task.due === selected &&
+          (!typeFilter || String(task.type_id) === typeFilter) && (!query || `${task.title} ${task.category}`.toLocaleLowerCase("pt-BR").includes(query))) : undefined} tasks={visible} now={now} loading={loading} searching={!!query} singleDay={filter === "day"}
           viewKey={`${selected}:${filter}:${typeFilter}:${hideDone}:${query}`}
           onEdit={task => { const record = records.find(item => item.id === (task.source_id || task.id)); if (record) setDialog({ task: record, occurrenceDate: task.due }); }}
           pendingIds={pendingIds} onToggle={task => act(task, toggleTask)} onDelete={task => act(task, deleteTask)}

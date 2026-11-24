@@ -5268,3 +5268,552 @@ button.link-button:hover:not(:disabled) {
     background: color-mix(in srgb, var(--action) 18%, var(--raised));
   }
 }
+
+/* ---------- Desempenho: hábitos ---------- */
+.insight-habits {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.habit-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.habit-stat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--raised) 70%, transparent);
+}
+
+.habit-stat > svg {
+  grid-row: span 3;
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
+}
+
+.habit-stat > span {
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.habit-stat > strong {
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.habit-stat > small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: .7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.habit-stat.habit-stat-main {
+  border-color: color-mix(in srgb, var(--success) 40%, var(--line));
+  background: linear-gradient(140deg, color-mix(in srgb, var(--success) 14%, var(--raised)), var(--raised));
+}
+
+.habit-stat.habit-stat-main > svg {
+  color: var(--success);
+}
+
+.habit-list {
+  display: grid;
+  gap: 8px;
+}
+
+.habit-row {
+  display: grid;
+  grid-template-columns: 38px minmax(110px, 1fr) auto auto 48px;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px 9px 10px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--habit-color);
+  border-radius: 14px;
+  background: linear-gradient(115deg, color-mix(in srgb, var(--habit-color) 12%, var(--surface)), var(--surface));
+}
+
+.habit-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--habit-color) 22%, var(--surface));
+  color: color-mix(in srgb, var(--habit-color) 85%, var(--ink));
+}
+
+.habit-icon > svg {
+  width: 21px;
+  height: 21px;
+}
+
+.habit-name {
+  display: grid;
+  min-width: 0;
+}
+
+.habit-name strong {
+  overflow: hidden;
+  font-size: .9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.habit-name span {
+  color: var(--muted);
+  font-size: .7rem;
+}
+
+/* Últimos 28 dias em 4 linhas de 7, como um mini calendário. */
+.habit-days {
+  display: grid;
+  grid-template-columns: repeat(14, 10px);
+  gap: 3px;
+}
+
+.habit-day {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+}
+
+.habit-day.is-done {
+  background: var(--habit-color);
+}
+
+.habit-day.is-missed {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--habit-color) 45%, var(--muted));
+}
+
+.habit-day.is-pending {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--action);
+}
+
+.habit-streak {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.habit-streak span,
+.habit-streak small {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.habit-streak span {
+  color: color-mix(in srgb, var(--warning, #f59e0b) 80%, var(--ink));
+  font-size: .85rem;
+  font-weight: 800;
+}
+
+.habit-streak small {
+  color: var(--muted);
+  font-size: .66rem;
+}
+
+.habit-streak svg {
+  width: 13px;
+  height: 13px;
+}
+
+.habit-rate {
+  font-size: 1rem;
+  text-align: right;
+}
+
+.habit-weekdays {
+  display: grid;
+  gap: 8px;
+}
+
+.habit-weekdays-title {
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.habit-weekdays > div {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.habit-weekday {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+
+.habit-weekday-bar {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 46px;
+  height: 54px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--raised) 75%, transparent);
+}
+
+.habit-weekday-bar > span {
+  width: 100%;
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--success), color-mix(in srgb, var(--success) 55%, var(--accent)));
+}
+
+.habit-weekday small {
+  color: var(--muted);
+  font-size: .66rem;
+}
+
+.habit-weekday b {
+  font-size: .72rem;
+}
+
+@media (max-width: 1100px) {
+  .habit-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .habit-row {
+    grid-template-columns: 34px minmax(0, 1fr) auto 40px;
+    gap: 8px;
+  }
+
+  .habit-icon { width: 34px; height: 34px; }
+
+  .habit-days {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    grid-template-columns: repeat(28, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  .habit-day { width: auto; height: 8px; }
+  .habit-stat > strong { font-size: 1.2rem; }
+}
+
+/* O painel de hábitos não encolhe dentro da coluna flexível do Desempenho. */
+.performance-view > .insight-habits {
+  flex: none;
+  overflow: visible;
+}
+
+/* ---------- Calendário: cards das pontuais no estilo Apple ---------- */
+
+/* Um card por atividade: dia inteiro em barra tingida na cor do tipo; com
+   horário, ponto colorido, título e hora à direita (como no mês do macOS). */
+.month-calendar .month-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+}
+
+.month-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 4px;
+  font-size: .66rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink);
+  text-align: left;
+}
+
+.month-chip.all-day {
+  background: color-mix(in srgb, var(--event-color) 24%, transparent);
+  color: color-mix(in srgb, var(--event-color) 70%, var(--ink));
+  box-shadow: inset 2px 0 0 var(--event-color);
+}
+
+.month-chip.has-time::before {
+  content: "";
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--event-color);
+}
+
+.month-chip-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.month-chip-time {
+  flex: none;
+  font-size: .6rem;
+  font-weight: 500;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.month-chip.is-done { opacity: .45; }
+.month-chip.is-done .month-chip-title { text-decoration: line-through; }
+
+.month-chip-more {
+  padding: 0 5px;
+  font-size: .6rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.month-chip-more.more-2 { display: none; }
+
+/* Dia estreito: dois cards, sem hora e "+N" curto. */
+@container (max-width: 110px) {
+  .month-chip-time { display: none; }
+  .month-chip.chip-3, .month-chip-more.more-3 { display: none; }
+  .month-chip-more.more-2 { display: block; }
+}
+
+@container (max-width: 64px) {
+  .month-chip { height: 13px; padding: 0 3px; font-size: .52rem; border-radius: 3px; gap: 2px; }
+  .month-chip.has-time::before { flex-basis: 4px; width: 4px; height: 4px; }
+  .month-chip-more { padding: 0 2px; font-size: .5rem; }
+  .month-chip-more .more-word { display: none; }
+}
+
+.month-calendar .outside .month-chip { opacity: .5; }
+
+/* Ícone do tipo no card (no lugar do ponto da Apple). */
+.month-chip.has-time::before { content: none; }
+.month-chip > svg {
+  flex: 0 0 11px;
+  width: 11px;
+  height: 11px;
+  color: var(--event-color);
+}
+.month-chip.all-day > svg { color: inherit; }
+
+@container (max-width: 64px) {
+  .month-chip > svg { flex-basis: 8px; width: 8px; height: 8px; }
+}
+
+/* ---------- Janelas de nova atividade e de tipos ---------- */
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.modal.modal-task, .modal.modal-type {
+  width: min(560px, calc(100vw - 24px));
+  padding: 0;
+  overflow: hidden;
+  flex-direction: column;
+}
+.modal.modal-task[open], .modal.modal-type[open] { display: flex; }
+
+.modal-task .modal-heading, .modal-type .modal-heading {
+  margin: 0;
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid var(--line);
+  align-items: flex-start;
+}
+.modal-titles { display: grid; gap: 4px; min-width: 0; }
+.modal-subtitle { margin: 0; font-size: .78rem; color: var(--muted); }
+
+.modal-task > form, .modal-type > form, .modal-type > .type-manager {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 24px 0;
+  scrollbar-width: thin;
+}
+.modal-type > .type-manager > form { padding: 0; }
+
+.task-form-v2 > fieldset, .type-form-v2 > fieldset { display: grid; gap: 16px; }
+
+/* Ações presas ao pé da janela. */
+.task-form-v2 .form-actions, .type-form-v2 .form-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin: 4px -24px 0;
+  padding: 14px 24px 18px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+.modal-type > .type-manager .type-form-v2 .form-actions { margin-left: -24px; margin-right: -24px; }
+
+/* Pontual x Habitual. */
+.kind-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kind-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 14px; text-align: left;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.kind-option strong { display: block; font-size: .9rem; }
+.kind-option small { display: block; margin-top: 2px; font-size: .68rem; color: var(--muted); font-weight: 500; }
+.kind-icon {
+  display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px;
+  border-radius: 11px; background: color-mix(in srgb, var(--ink) 7%, transparent); color: var(--muted);
+}
+.kind-icon svg { width: 19px; height: 19px; }
+.kind-option[aria-checked="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.kind-option[aria-checked="true"] .kind-icon { background: var(--accent); color: #fff; }
+
+/* Título grande, sem rótulo visível. */
+.title-field input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+.form-block { display: grid; gap: 10px; }
+.form-block > h3 {
+  display: flex; align-items: center; gap: 6px; margin: 0;
+  font-size: .68rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+}
+.form-block > h3 svg { width: 13px; height: 13px; }
+.label-with-icon { display: inline-flex; align-items: center; gap: 5px; }
+.label-with-icon svg { width: 13px; height: 13px; }
+
+/* Chips de tipo, com ícone na cor do tipo. */
+.type-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.type-chip {
+  --chip-color: var(--accent);
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 34px; padding: 6px 12px 6px 9px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  font-size: .78rem; font-weight: 600;
+}
+.type-chip > svg { width: 16px; height: 16px; color: var(--chip-color); }
+.type-chip[aria-checked="true"] {
+  border-color: var(--chip-color);
+  background: color-mix(in srgb, var(--chip-color) 20%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--chip-color);
+}
+.type-chip-new { border-style: dashed; color: var(--muted); }
+.type-chip-new > svg { color: var(--accent); }
+
+/* Botões segmentados (prioridade, frequência). */
+.segmented {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px;
+  padding: 4px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line);
+}
+.segmented button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 34px; padding: 6px 10px; border: 0; border-radius: 9px;
+  background: transparent; color: var(--muted); font-size: .8rem; font-weight: 650; box-shadow: none;
+}
+.segmented button[aria-checked="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 6px #0003, inset 0 0 0 1px var(--line); }
+.priority-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.priority-segmented .p-1 .priority-dot { background: #ef4444; }
+.priority-segmented .p-2 .priority-dot { background: #f59e0b; }
+.priority-segmented .p-3 .priority-dot { background: #22c55e; }
+
+.task-form-v2 .weekday-options { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.task-form-v2 .weekday-options button { min-height: 36px; padding: 0; border-radius: 10px; font-size: .74rem; }
+.duration-inline { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8px; align-items: end; }
+
+/* Atrasada x Não feita. */
+.overdue-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.overdue-option {
+  --tone: #f97316;
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px; border-radius: 13px; text-align: left;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+}
+.overdue-option.is-missed { --tone: #94a3b8; }
+.overdue-option > svg { flex: none; width: 20px; height: 20px; margin-top: 1px; color: var(--tone); }
+.overdue-option strong { display: block; font-size: .85rem; }
+.overdue-option small { display: block; margin-top: 3px; font-size: .67rem; line-height: 1.35; color: var(--muted); font-weight: 500; }
+.overdue-option[aria-checked="true"] {
+  border-color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 13%, var(--surface));
+  box-shadow: inset 0 0 0 1px var(--tone);
+}
+
+/* Tipo: prévia ao vivo. */
+.type-live-preview {
+  display: flex; align-items: center; gap: 13px;
+  padding: 14px; border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--type-color) 45%, var(--line));
+  background: linear-gradient(120deg, color-mix(in srgb, var(--type-color) 22%, var(--surface)), var(--surface));
+}
+.type-live-icon {
+  display: grid; place-items: center; flex: 0 0 50px; width: 50px; height: 50px; border-radius: 14px;
+  background: color-mix(in srgb, var(--type-color) 25%, var(--surface)); color: color-mix(in srgb, var(--type-color) 80%, var(--ink));
+}
+.type-live-icon svg { width: 28px; height: 28px; }
+.type-live-text { display: grid; gap: 3px; flex: 1; min-width: 0; }
+.type-live-text strong { font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.type-live-text small { font-size: .68rem; color: var(--muted); }
+.type-live-chip {
+  display: inline-flex; align-items: center; gap: 5px; flex: none; max-width: 40%;
+  padding: 4px 9px; border-radius: 5px; font-size: .7rem; font-weight: 650;
+  background: color-mix(in srgb, var(--type-color) 24%, transparent);
+  color: color-mix(in srgb, var(--type-color) 70%, var(--ink));
+  box-shadow: inset 2px 0 0 var(--type-color);
+  overflow: hidden; white-space: nowrap;
+}
+.type-live-chip svg { width: 12px; height: 12px; flex: none; }
+
+.color-field { display: grid; gap: 8px; }
+.color-field > span { font-size: .8rem; font-weight: 600; }
+.type-form-v2 .color-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.type-form-v2 .color-option { width: 30px; height: 30px; border-radius: 50%; }
+.type-form-v2 .color-option[aria-checked="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+.color-custom {
+  position: relative; display: grid; place-items: center; width: 30px; height: 30px;
+  border-radius: 50%; color: #fff; cursor: pointer;
+  background: conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444);
+}
+.color-custom svg { width: 14px; height: 14px; filter: drop-shadow(0 1px 2px #0008); }
+.color-custom.is-active { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+.color-custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; padding: 0; border: 0; }
+
+.type-saved { display: flex; align-items: center; gap: 6px; margin: 0; font-size: .78rem; color: #22c55e; }
+.type-saved svg { width: 15px; height: 15px; }
+
+@media (max-width: 760px) {
+  .modal.modal-task, .modal.modal-type { max-height: calc(100dvh - 16px); border-radius: 16px; }
+  .modal-task .modal-heading, .modal-type .modal-heading { padding: 16px 16px 12px; }
+  .modal-task > form, .modal-type > form, .modal-type > .type-manager { padding: 14px 16px 0; }
+  .task-form-v2 .form-actions, .type-form-v2 .form-actions,
+  .modal-type > .type-manager .type-form-v2 .form-actions { margin: 4px -16px 0; padding: 12px 16px 14px; }
+  .kind-option { padding: 10px; gap: 9px; }
+  .kind-icon { flex-basis: 32px; width: 32px; height: 32px; }
+  .overdue-options { grid-template-columns: 1fr; }
+  .type-live-chip { display: none; }
+}

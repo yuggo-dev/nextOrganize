@@ -6,7 +6,8 @@
 | --- | --- | --- |
 | Apresentação | `client/src/domains/tasks/Dashboard.jsx` | Compor resumo, seleção de data, filtros e ações |
 | Apresentação | `client/src/domains/tasks/PerformanceDashboard.jsx` | Indicadores, filtros de período e gráficos de desempenho |
-| Apresentação | `components/Calendar.jsx` | Mês de 42 células com ícones das pontuais e pontos das regulares |
+| Apresentação | `components/Calendar.jsx` | Mês de 42 células com um card por pontual, no estilo do calendário da Apple (habituais ficam fora) |
+| Domínio | `model/habits.js` | Indicadores das atividades habituais: consistência, sequências, dias perfeitos e taxa por dia da semana |
 | Apresentação | `components/TaskList.jsx` | Lista com rolagem interna: regulares e depois pontuais, com subtítulos discretos |
 | Apresentação | `components/TaskDialog.jsx` | Cadastro e edição em janela com título, tipo, prioridade, data, horário (de conclusão ou de notificação), repetição e escolha de atraso |
 | Aplicação | `hooks/useTasks.js` | Carga inicial e atualização do estado após operações da API |
@@ -27,7 +28,7 @@ de formas diferentes. Implementado em 24/11/2026; veja o [histórico](../histori
 | --- | --- | --- |
 | Horário | **Horário de conclusão**, opcional: a janela oferece **Com** ou **Sem** horário | **Horário de notificação**, opcional. Os lembretes ainda não existem: o horário só fica guardado |
 | Fica atrasada | Depois do horário de conclusão no dia; sem horário, quando a data passa | Nunca no próprio dia. Depois que o dia passa, depende da escolha abaixo |
-| Dia passado sem conclusão | **Atrasada** | **Atrasada** ou **Não feita**, conforme a opção **Se o dia passar sem concluir** (padrão: atrasada) |
+| Dia passado sem conclusão | **Atrasada** ou **Não feita**, conforme a opção **Se o dia passar sem concluir** (padrão: atrasada) | **Atrasada** ou **Não feita**, conforme a mesma opção (padrão: atrasada) |
 
 Uma ocorrência **Não feita** aparece em tom neutro, não entra em **Em aberto** nem
 na contagem de atrasadas, aparece no Desempenho como **Não feitas** e interrompe o
@@ -44,11 +45,12 @@ feita) e `isPending` (ainda pede ação: aberta e não "não feita").
 - O atraso segue as regras de [Horários e atraso](#horários-e-atraso).
 - A ordenação apresenta primeiro as tarefas de hoje com prazo em aberto, depois as futuras, as sem prazo, as atrasadas, as não feitas e as concluídas. Dentro desses grupos, considera data, horário (de conclusão ou de notificação) e prioridade.
 - Cada tarefa atrasada recebe o selo **Atrasada** e a borda esquerda na cor de atraso. Não há uma seção separada de atrasadas: o atalho **Em aberto** informa quantas atividades abertas estão atrasadas.
-- Os marcadores do calendário representam as tarefas que passam pelos filtros de tipo, busca e conclusão. A forma dos marcadores está descrita em [Calendário: pontuais e regulares](#calendário-pontuais-e-regulares). Os detalhes das atividades aparecem na lista ao selecionar o dia.
+- Os marcadores do calendário representam as tarefas que passam pelos filtros de tipo, busca e conclusão. A forma dos marcadores está descrita em [Calendário: pontuais e habituais](#calendário-pontuais-e-habituais). Os detalhes das atividades aparecem na lista ao selecionar o dia.
 - A lista usa cards enxutos com a borda esquerda na cor do tipo (veja [Cards da lista](#cards-da-lista)). A busca por título ou tipo filtra a lista e o calendário, combinada aos demais filtros. O resumo considera todas as tarefas da conta.
 - A tela usa a altura da janela. Em telas estreitas, calendário e lista ficam empilhados, sem rolagem da página: a lista ocupa a tela e o calendário abre como uma aba por cima dela. A lista tem rolagem interna e permite navegação pelo teclado quando recebe foco. Alterar a data ou os filtros retorna a rolagem ao início.
-- Regulares e pontuais ficam numa lista só, nessa ordem. Cada grupo começa com um subtítulo discreto, com a contagem de concluídas e uma linha fina (`REGULARES 1/3`, depois `PONTUAIS 0/2`).
-- A janela de cadastro preenche a data selecionada. Nas pontuais, começa em **Com** horário, que então é obrigatório; **Sem** deixa só a data. Nas regulares, mostra o horário de notificação e a opção **Se o dia passar sem concluir**. O título aceita até 200 caracteres, o mesmo limite da API.
+- Regulares e pontuais ficam numa lista só, nessa ordem. Cada grupo começa com um subtítulo discreto, com a contagem de concluídas e uma linha fina (`HABITUAIS 1/3`, depois `PONTUAIS 0/2`).
+- A janela **Nova atividade** começa com a escolha entre **Pontual** (acontece uma vez) e **Habitual** (se repete), e o resto se adapta. Depois vêm o título, o tipo em chips com ícone e cor (com **Novo tipo** no fim), a prioridade em botões segmentados (Alta, Média, Baixa), a seção **Quando** (pontuais: data e horário **Com**/**Sem**, com horário obrigatório em **Com**) ou **Repetição** (habituais: Todos os dias ou Dias da semana, data inicial, lembrete e duração), e por fim **Se o dia passar sem concluir**, em dois cartões: **Atrasada** ou **Não feita**, para os dois tipos. Os botões ficam presos ao pé da janela. Ela preenche a data selecionada; o título aceita até 200 caracteres, o mesmo limite da API.
+- A janela de tipo mostra no topo uma prévia ao vivo (ícone, nome e o card como aparece no calendário), o nome, dez cores sugeridas mais uma personalizada e o seletor de ícones. **Personalizar tipos** escolhe o tipo numa fileira de chips em vez de uma lista.
 - O progresso do dia conta só as atividades da data selecionada.
 
 ### Tarefas diárias e combo
@@ -83,7 +85,25 @@ O resumo e as listas gerais incluem o histórico de diárias e os próximos sete
 
 ### Indicadores de desempenho
 
-A taxa de conclusão é o número de tarefas marcadas como concluídas dividido pelo total de tarefas do período. A tela também mostra concluídas, em aberto, sem atraso e atrasadas; quando houver, mostra ainda as **não feitas** (regulares que não contam atraso e cujo dia passou), em cinza no anel e fora de "em aberto". As tarefas abertas sem prazo entram no grupo sem atraso. Quando não há atividades, a taxa é exibida como um traço.
+A taxa de conclusão é o número de tarefas marcadas como concluídas dividido pelo total de tarefas do período. A tela também mostra concluídas, em aberto, sem atraso e atrasadas; quando houver, mostra ainda as **não feitas** (regulares que não contam atraso e cujo dia passou), em cinza no anel e fora de "em aberto". As tarefas abertas sem prazo entram no grupo sem atraso. Quando não há atividades, a taxa é exibida como um traço. Esses indicadores
+contam só as **pontuais**; as habituais têm painel próprio.
+
+### Hábitos
+
+O painel **Hábitos**, no topo do Desempenho, olha os últimos 28 dias de cada
+atividade habitual (`model/habits.js`), sem depender do filtro de período:
+
+- **Consistência:** dias concluídos dividido pelos dias previstos. Hoje só entra
+  na conta se já foi concluído, para não baixar a taxa antes do fim do dia.
+- **Maior sequência atual:** a maior sequência em andamento entre os hábitos.
+- **Dias perfeitos:** dias em que todos os hábitos previstos foram concluídos,
+  entre os dias com algum hábito previsto.
+- **Hoje:** hábitos de hoje concluídos sobre os previstos.
+
+Cada hábito tem uma linha com ícone, nome, programação, uma grade dos 28 dias
+(concluído, não feito, pendente hoje ou sem previsão), a sequência atual, o
+recorde e a taxa. Abaixo, barras mostram a taxa por dia da semana e destacam o
+mais forte.
 
 Os filtros **Este mês** e **Últimos 7 dias** usam a data de prazo. O segundo considera o dia atual e os seis dias anteriores. **Todo o histórico** inclui também tarefas sem prazo. Os gráficos usam o estado atual de conclusão de cada tarefa. O gráfico de prazos agrupa atividades pela data prevista de conclusão.
 
@@ -122,7 +142,7 @@ As rotas são relativas à base da API: `https://<project-ref>.supabase.co/funct
 | `due` | `YYYY-MM-DD` ou `null` | Data válida. Continua opcional na API para aceitar tarefas antigas sem prazo. |
 | `due_time` | `HH:mm` ou `null` | Horário de conclusão das **pontuais**, local de 24 horas, associado a uma data. Opcional. Nas regulares é sempre `null`: um `due_time` enviado para uma regular (clientes antigos) é gravado como `notify_time` |
 | `notify_time` | `HH:mm` ou `null` | Horário de notificação das **regulares**. Opcional; não define atraso. Nas pontuais é sempre `null` |
-| `tracks_overdue` | Booleano | Regulares: `true` (padrão) marca como atrasada a ocorrência de um dia passado sem conclusão; `false` deixa como não feita. Omitir no `PATCH` preserva o valor |
+| `tracks_overdue` | Booleano | Pontuais e regulares: `true` (padrão) marca como atrasada; `false` nunca atrasa e, quando o dia passa sem conclusão, deixa como não feita. Omitir no `PATCH` preserva o valor |
 | `done` | Booleano | Aceito na atualização. Novas tarefas começam abertas. |
 | `recurrence` | Texto | `none` para tarefa avulsa (padrão), `daily` para repetição diária ou `weekly` para dias da semana |
 | `recurrence_days` | Array de inteiros | Obrigatório com `weekly`: dias de `0` (domingo) a `6` (sábado), normalizados sem duplicatas |
@@ -283,15 +303,22 @@ empilhados com rolagem vertical. A altura mínima dos gráficos evita comprimir
 indicadores e legendas para forçar todos os painéis em uma única tela.
 
 
-## Calendário: pontuais e regulares
+## Calendário: pontuais e habituais
 
-Dentro de cada dia, as pontuais aparecem como círculos cheios na cor do tipo,
-com o ícone e, se houver mais de uma tarefa do tipo, a quantidade num selinho
-(contorno vazio quando todas foram concluídas). As regulares aparecem como mini
-cards leves no pé do dia, um por tipo e sem título, no mesmo estilo dos cards da
-lista (fundo claro na cor do tipo, faixa à esquerda e o ícone), sobrepostos em
-leque. Quantos aparecem depende da largura do dia (4, 2 ou 1, com "+N" para o
-restante); o card fica apagado quando todas do tipo foram concluídas.
+Na interface, as regulares (diárias e dias da semana) se chamam **atividades
+habituais**. Com **Todos** no filtro, elas não aparecem no calendário: ficam na
+lista do dia, no grupo **Habituais**, e no painel **Hábitos** do Desempenho; o
+tooltip do dia só cita quantas habituais existem. Ao escolher um tipo no filtro
+do topo, o calendário mostra todas as atividades desse tipo, habituais
+inclusive, com o marcador de ícone: um quadrado na cor do tipo, com a
+quantidade num selinho e apagado quando todas foram concluídas.
+
+Dentro de cada dia, cada pontual vira um card, como no mês do calendário da
+Apple, com o ícone do tipo antes do título: sem horário, uma barra tingida na
+cor do tipo; com horário, o ícone na cor do tipo, o título e a hora à direita. Os cards seguem a ordem: primeiro os
+sem horário, depois por horário. Concluídas ficam apagadas e riscadas. Cabem até
+três por dia; em dias estreitos, dois e sem a hora; no celular, cards menores.
+O restante vira "+N mais" (ou só "+N" no celular).
 
 O calendário usa uma grade mensal. No computador e no celular, os dias usam a mesma coloração: cada
 dia do mês é um bloco arredondado com fundo cheio, dias com tarefas ficam um tom
@@ -303,22 +330,12 @@ Os filtros por tipo ficam no topo do calendário, logo abaixo do cabeçalho do
 mês. **Todos** tem estilo próprio (ícone de grade e borda tracejada; selecionado,
 fica preenchido na cor de ação) e é separado dos tipos por um divisor.
 
-Cada célula apresenta um ícone por tipo de atividade pontual, sem título visível e sem
-limite ou agrupamento em `+N`. Os ícones quebram em linhas e as semanas acomodam
-o conteúdo. Se necessário, a grade possui rolagem própria, sem cortar os ícones. O ícone fica atenuado somente quando todas as pontuais daquele tipo no dia
-estiverem concluídas. Tipos diferentes não são agrupados por usarem o mesmo
-ícone ou cor. As regulares usam até quatro pontos por tipo, sem ícones ou contadores
-na célula; eles indicam presença de tipos, não quantidade de tarefas. A lista da direita mostra as atividades completas ao
+A lista da direita mostra as atividades completas ao
 selecionar o dia. O tooltip contém as contagens e os nomes das atividades, e o
-rótulo acessível informa data, pontuais, regulares e concluídas.
+rótulo acessível informa data, pontuais, concluídas e habituais.
 
 Hoje recebe destaque forte, no computador e no celular: contorno e brilho na
 cor de ação, fundo tingido, número num círculo cheio e o rótulo **HOJE**. Além disso, o dia selecionado tem contorno e a conclusão de
-todas as atividades visíveis recebe um símbolo de confirmação. Ícones de tipos
-com todas as atividades concluídas ficam atenuados. Os filtros de tipo, busca e conclusão
+todas as atividades visíveis recebe um símbolo de confirmação. Os filtros de tipo, busca e conclusão
 continuam sendo aplicados, sem alterar os dados das tarefas.
 
-Os marcadores de cada grupo do calendário priorizam tipos com mais atividades
-pendentes. Tipos totalmente concluídos aparecem por último; empates usam o nome
-do tipo em ordem alfabética. A ordenação se atualiza ao concluir ou reabrir tarefas
-e se aplica tanto aos ícones pontuais quanto aos pontos de atividades regulares.

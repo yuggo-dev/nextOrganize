@@ -26,10 +26,10 @@ As regras de negócio (validação, autorização, recorrência) ficam em `serve
 - Conclusão, reabertura, exclusão, filtro por tipo e opção de ocultar concluídas.
 - Tarefas diárias ou em dias da semana selecionados, com duração por dias/semanas ou data final, conclusão independente por ocorrência e combo de ocorrências cumpridas.
 - Lista com rolagem interna, mantendo o calendário e os controles visíveis. No celular, a página não rola: a lista ocupa a tela e o calendário abre como uma aba no pé da tela.
-- Lista do dia com as regulares (diárias e semanais) e depois as pontuais, separadas por subtítulos com a contagem de concluídas.
+- Lista do dia com as atividades habituais (diárias e semanais, fora do calendário) e depois as pontuais, separadas por subtítulos com a contagem de concluídas.
 - Interface com navegação lateral, tema escuro inicial em tons azul-acinzentados e opção de alternar para o tema claro.
 - Busca por título ou tipo de atividade, aplicada à lista e às marcações do calendário.
-- Navegação entre **Início**, com a agenda, e **Desempenho**, com taxa de conclusão, pendências e gráficos por tipo, prioridade e data de prazo.
+- Navegação entre **Início**, com a agenda, e **Desempenho**, com o painel **Hábitos** (consistência de 28 dias, sequências, dias perfeitos e taxa por dia da semana) e, para as pontuais, taxa de conclusão, pendências e gráficos por tipo, prioridade e data de prazo.
 
 ## Instalação e execução
 

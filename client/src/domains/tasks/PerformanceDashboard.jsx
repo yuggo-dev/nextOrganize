@@ -1,8 +1,53 @@
 import { useState } from 'react';
-import { FiActivity, FiTrendingUp, FiCheckCircle, FiClock, FiAlertCircle, FiCalendar, FiLayers, FiFlag, FiChevronLeft, FiChevronRight, FiTarget, FiMinusCircle } from 'react-icons/fi';
+import { FiActivity, FiTrendingUp, FiCheckCircle, FiClock, FiAlertCircle, FiCalendar, FiLayers, FiFlag, FiChevronLeft, FiChevronRight, FiTarget, FiMinusCircle, FiRepeat, FiZap, FiAward, FiStar } from 'react-icons/fi';
 import TypeIcon from '../task-types/icons.jsx';
 import { buildPerformance } from './model/performance.js';
 import { isoDate } from './model/schedule.js';
+import { buildHabits, isHabit } from './model/habits.js';
+
+const weekdayShort = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const statusLabel = { done: 'feito', missed: 'não feito', pending: 'hoje, em aberto', off: 'fora da programação' };
+
+function habitSchedule(habit) {
+  if (habit.recurrence !== 'weekly' || habit.recurrence_days.length === 7) return 'Todo dia';
+  return [...habit.recurrence_days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map(day => weekdayShort[day]).join(' · ');
+}
+
+// Hábitos: tarefas diárias e semanais, com consistência, sequência e as últimas
+// quatro semanas. Ficam fora dos indicadores gerais, que contam só as pontuais.
+function HabitsPanel({ habits }) {
+  const { consistency, perfectDays, activeDays, bestCurrent, todayDone, todayTotal, weekdays, windowDays } = habits;
+  const strongest = weekdays.filter(day => day.rate !== null).sort((a, b) => b.rate - a.rate)[0];
+  return <section className="performance-panel insight-panel insight-habits" aria-labelledby="habits-title">
+    <div className="insight-panel-heading"><span className="insight-section-icon"><FiRepeat aria-hidden="true" /></span><div><h2 id="habits-title">Hábitos</h2><p>Atividades habituais nos últimos {windowDays} dias</p></div><span className="insight-count">{habits.habits.length} hábitos</span></div>
+    {!habits.habits.length ? <div className="insight-empty"><FiRepeat aria-hidden="true" /><p>Nenhum hábito ainda.</p><span>Crie uma tarefa com repetição diária ou em dias da semana.</span></div> : <>
+      <div className="habit-summary">
+        <div className="habit-stat habit-stat-main"><FiTrendingUp aria-hidden="true" /><span>Consistência</span><strong>{consistency ?? '—'}{consistency !== null && '%'}</strong><small>{habits.done} de {habits.expected} dias cumpridos</small></div>
+        <div className="habit-stat"><FiZap aria-hidden="true" /><span>Maior sequência atual</span><strong>{bestCurrent ? bestCurrent.streak : 0}</strong><small>{bestCurrent ? bestCurrent.title : 'Comece hoje uma sequência'}</small></div>
+        <div className="habit-stat"><FiStar aria-hidden="true" /><span>Dias perfeitos</span><strong>{perfectDays}</strong><small>de {activeDays} dias com hábitos</small></div>
+        <div className="habit-stat"><FiCheckCircle aria-hidden="true" /><span>Hoje</span><strong>{todayDone}/{todayTotal}</strong><small>{todayTotal && todayDone === todayTotal ? 'Todos os hábitos feitos!' : 'hábitos feitos hoje'}</small></div>
+      </div>
+      <div className="habit-list">
+        {habits.habits.map(habit => <div className="habit-row" key={habit.id} style={{ '--habit-color': habit.color }}>
+          <span className="habit-icon"><TypeIcon icon={habit.icon} name={habit.category} /></span>
+          <div className="habit-name"><strong title={habit.title}>{habit.title}</strong><span>{habitSchedule(habit)}</span></div>
+          <div className="habit-days" role="img" aria-label={`${habit.title}: ${habit.done} de ${habit.expected} dias cumpridos nos últimos ${windowDays} dias`}>
+            {habit.days.map(day => <i key={day.date} className={`habit-day is-${day.status}`} title={`${day.date.split('-').reverse().join('/')}: ${statusLabel[day.status]}`} />)}
+          </div>
+          <div className="habit-streak" title={`Sequência atual de ${habit.streak}; recorde de ${habit.best}`}><span><FiZap aria-hidden="true" />{habit.streak}</span><small><FiAward aria-hidden="true" />{habit.best}</small></div>
+          <b className="habit-rate">{habit.rate ?? '—'}{habit.rate !== null && '%'}</b>
+        </div>)}
+      </div>
+      <div className="habit-weekdays" aria-label="Consistência por dia da semana">
+        <span className="habit-weekdays-title">Por dia da semana{strongest ? ` · mais forte: ${weekdayShort[strongest.index]}` : ''}</span>
+        <div>{[1, 2, 3, 4, 5, 6, 0].map(index => weekdays[index]).map(day => <div key={day.index} className="habit-weekday" title={day.rate === null ? 'Sem hábitos programados' : `${day.done} de ${day.expected} cumpridos`}>
+          <div className="habit-weekday-bar"><span style={{ height: `${day.rate ?? 0}%` }} /></div>
+          <small>{weekdayShort[day.index]}</small><b>{day.rate === null ? '—' : `${day.rate}%`}</b>
+        </div>)}</div>
+      </div>
+    </>}
+  </section>;
+}
 
 function Metric({Icon,label,value,detail,tone,progress,total}) {
   return <article className={`insight-metric metric-${tone}`}>
@@ -15,7 +60,9 @@ function Metric({Icon,label,value,detail,tone,progress,total}) {
 export default function PerformanceDashboard({ tasks, now, loading }) {
   const [period, setPeriod] = useState('all');
   const [typePage, setTypePage] = useState(0);
-  const data = buildPerformance(tasks, now, period);
+  // Indicadores gerais: só as pontuais. Hábitos têm painel próprio.
+  const data = buildPerformance(tasks.filter(task => !isHabit(task)), now, period);
+  const habits = buildHabits(tasks, now);
   const pageCount = Math.max(1, Math.ceil(data.types.length / 4));
   const currentPage = Math.min(typePage, pageCount - 1);
   const groups = data.types.slice(currentPage * 4, currentPage * 4 + 4);
@@ -33,15 +80,17 @@ export default function PerformanceDashboard({ tasks, now, loading }) {
 
     {loading ? <div className="empty-state" role="status">Carregando indicadores…</div> : <>
       <div className="insights-metrics">
-        <Metric Icon={FiTrendingUp} label="Taxa de conclusão" value={rate} detail={`${data.total} atividades no período`} tone="rate" progress={data.completed} total={data.total} />
+        <Metric Icon={FiTrendingUp} label="Taxa de conclusão" value={rate} detail={`${data.total} pontuais no período`} tone="rate" progress={data.completed} total={data.total} />
         <Metric Icon={FiCheckCircle} label="Concluídas" value={data.completed} detail="Cada conclusão é um passo" tone="completed" progress={data.completed} total={data.total} />
         <Metric Icon={FiClock} label="Em aberto" value={data.open} detail={`${data.scheduled} sem atraso`} tone="open" progress={data.open} total={data.total} />
         <Metric Icon={FiAlertCircle} label="Atrasadas" value={data.overdue} detail={data.overdue ? 'Você pode reorganizar os prazos' : 'Nenhuma pendência atrasada'} tone="overdue" progress={data.overdue} total={data.total} />
       </div>
 
+      <HabitsPanel habits={habits} />
+
       <div className="performance-grid insights-grid">
         <section className="performance-panel insight-panel insight-overview" aria-labelledby="completion-title">
-          <div className="insight-panel-heading"><span className="insight-section-icon"><FiTarget aria-hidden="true" /></span><div><h2 id="completion-title">Visão das atividades</h2><p>Seu ponto de partida para o próximo passo</p></div></div>
+          <div className="insight-panel-heading"><span className="insight-section-icon"><FiTarget aria-hidden="true" /></span><div><h2 id="completion-title">Atividades pontuais</h2><p>Seu ponto de partida para o próximo passo</p></div></div>
           <div className="completion-content">
             <div className="completion-ring" role="img" aria-label={`${data.completed} concluídas, ${data.scheduled} abertas sem atraso, ${data.overdue} atrasadas e ${data.missed} não feitas`}
               style={{ background: data.total ? `conic-gradient(var(--success) 0deg ${completedAngle}deg, var(--accent) ${completedAngle}deg ${completedAngle + scheduledAngle}deg, var(--overdue) ${completedAngle + scheduledAngle}deg ${overdueEnd}deg, var(--muted) ${overdueEnd}deg 360deg)` : 'var(--line)' }}>

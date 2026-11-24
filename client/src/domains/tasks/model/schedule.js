@@ -4,19 +4,22 @@ export function isoDate(date) {
 
 export const isRegular = task => task.recurrence === "daily" || task.recurrence === "weekly";
 
+// Cada atividade escolhe se conta atraso (tracks_overdue, padrão sim). Sem
+// contar, nunca fica atrasada: quando o dia passa, vira só "não feita".
 // Pontual: atrasada depois do horário de conclusão (se houver) ou quando a data passa.
-// Regular: nunca durante o próprio dia; depois dele, só se a atividade conta atraso.
+// Regular: nunca durante o próprio dia; depois dele, se conta atraso.
 export function isOverdue(task, now) {
-  if (task.done || !task.due) return false;
+  if (task.done || !task.due || task.tracks_overdue === false) return false;
   const today = isoDate(now);
-  if (isRegular(task)) return task.tracks_overdue !== false && task.due < today;
+  if (isRegular(task)) return task.due < today;
   const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   return task.due < today || (task.due === today && !!task.due_time && task.due_time < time);
 }
 
-// Regular que não conta atraso e cujo dia passou sem conclusão: fica só "não feita".
+// Atividade (pontual ou regular) que não conta atraso e cujo dia passou sem
+// conclusão: fica só "não feita".
 export function isMissed(task, now) {
-  return isRegular(task) && task.tracks_overdue === false && !task.done && !!task.due && task.due < isoDate(now);
+  return task.tracks_overdue === false && !task.done && !!task.due && task.due < isoDate(now);
 }
 
 // Ainda pede ação: aberta e não encerrada como "não feita".

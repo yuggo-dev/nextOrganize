@@ -6,6 +6,26 @@ O frontend é publicado separadamente, em `<URL-do-frontend>`.
 Express e SQLite servem ao desenvolvimento local; veja os papéis de cada ambiente
 em [Arquitetura](architecture.md#papel-de-cada-ambiente).
 
+## Valores reais do ambiente
+
+A documentação não registra endereços nem identificadores da produção. Onde
+aparecerem, substitua os marcadores pelos valores reais:
+
+| Marcador | O que é | Onde encontrar |
+| --- | --- | --- |
+| `<project-ref>` | Identificador do projeto Supabase | Painel do Supabase → **Project Settings → General** (é também o subdomínio de `*.supabase.co`) |
+| `<URL-do-frontend>` | Endereço do frontend publicado | Painel da Netlify → **Domain management** |
+
+A URL da API fica em `https://<project-ref>.supabase.co/functions/v1/tarefas-api`.
+Guarde os valores só em arquivos locais ignorados pelo Git (`.env`,
+`client/.env.local`) e nas variáveis da Netlify e do Supabase. Não volte a
+escrevê-los em arquivos versionados.
+
+Esses valores não são credenciais: a URL da API vai embutida no JavaScript do
+frontend publicado e qualquer visitante pode vê-la. Tirá-los do repositório evita
+expor a infraestrutura a quem lê o código, mas a proteção real continua sendo a
+sessão, o CORS e o schema privado.
+
 ## Publicar uma mudança
 
 Faça a publicação a partir da `main`, com as alterações aprovadas já commitadas

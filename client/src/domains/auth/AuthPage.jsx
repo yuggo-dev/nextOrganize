@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Dashboard from "../tasks/Dashboard.jsx";
 import { authApi as api } from "./api.js";
+import Logo, { LogoMark } from "../../shared/components/Logo.jsx";
 
 export default function Auth() {
   const [user, setUser] = useState(null);
@@ -56,7 +57,7 @@ export default function Auth() {
     }
   };
 
-  if (loading) return <div className="wrap" role="status">Carregando sua conta…</div>;
+  if (loading) return <div className="wrap app-loading" role="status"><LogoMark size={44} />Carregando sua conta…</div>;
 
   if (user) {
     return <Dashboard key={user.id} user={user} onLogout={logout} loggingOut={busy} sessionError={error} />;
@@ -65,8 +66,13 @@ export default function Auth() {
   const registering = mode === "register";
   return (
     <main className="wrap auth-wrap">
-      <h1>{registering ? "Criar sua conta" : "Entrar"}</h1>
-      <p className="sub">Acesse suas tarefas e prazos.</p>
+      <div className="auth-brand">
+        <Logo size={46} />
+        <p className="auth-tagline">Sua agenda pessoal, um próximo passo de cada vez.</p>
+      </div>
+      <section className="auth-card" aria-labelledby="auth-title">
+      <h1 id="auth-title">{registering ? "Criar sua conta" : "Entrar"}</h1>
+      <p className="sub">{registering ? "Comece a organizar tarefas, rotinas e prazos." : "Acesse suas tarefas e prazos."}</p>
       {error && <div className="err" role="alert">{error}</div>}
       <form className="auth-form" onSubmit={submit}>
         <fieldset disabled={busy}>
@@ -88,11 +94,14 @@ export default function Auth() {
           <button className="main" type="submit">{busy ? "Aguarde…" : registering ? "Criar conta" : "Entrar"}</button>
         </fieldset>
       </form>
-      <button type="button" disabled={busy} onClick={() => {
-        setMode(registering ? "login" : "register");
-        setError("");
-        setForm({ ...form, password: "" });
-      }}>{registering ? "Já tenho conta" : "Criar uma conta"}</button>
+      <p className="auth-switch">{registering ? "Já tem uma conta?" : "Ainda não tem conta?"}{" "}
+        <button type="button" className="link-button" disabled={busy} onClick={() => {
+          setMode(registering ? "login" : "register");
+          setError("");
+          setForm({ ...form, password: "" });
+        }}>{registering ? "Entrar" : "Criar uma conta"}</button>
+      </p>
+      </section>
     </main>
   );
 }

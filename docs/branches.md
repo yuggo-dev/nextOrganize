@@ -26,18 +26,12 @@ git push
 Ao configurar uma hospedagem, selecione `main` para produção. Preview ou ambiente
 de testes deve acompanhar `desenvolvimento` e usar configuração própria.
 
-## Estado desta configuração
+## Observações
 
-As duas branches partem do mesmo commit publicado. As alterações presentes no
-workspace ao criar a branch foram preservadas sem commit automático. Elas só
-passarão a integrar o histórico de `desenvolvimento` após serem commitadas ali.
-Trocar de branch com alterações sem commit pode carregá-las junto ou ser impedido
-pelo Git; a separação efetiva do código depende dos commits.
-
-As branches `main` e `desenvolvimento` estão publicadas no GitHub. A branch local
-ativa é `desenvolvimento`, com acompanhamento de `origin/desenvolvimento`.
-O Git foi autenticado pela GitHub CLI com a conta proprietária do repositório.
-As alterações sem commit continuam locais e não foram incluídas nessa publicação.
+As branches `main` e `desenvolvimento` estão publicadas no GitHub, e a branch
+local `desenvolvimento` acompanha `origin/desenvolvimento`. Alterações sem commit
+ficam só no workspace: trocar de branch pode carregá-las junto ou ser impedido
+pelo Git. A separação efetiva do código depende dos commits.
 
 Esta configuração define branches Git. Ela não cria deploy automático,
 regras de proteção do GitHub ou um segundo projeto Supabase. A publicação atual
@@ -45,10 +39,12 @@ da Edge Function continua manual e aponta para o projeto de produção.
 
 ## Banco e API durante o desenvolvimento
 
-O frontend local está configurado para a API publicada no Supabase. Mudar a branch
-não muda automaticamente a conexão, os secrets ou o banco. Para testar sem alterar
-dados de produção, use SQLite local ou configure outro projeto Supabase com
-credenciais e `VITE_API_URL` próprios.
+Só existe um projeto Supabase, e ele é a produção. Mudar a branch não muda a
+conexão, os secrets nem o banco. Por isso, o desenvolvimento em `desenvolvimento`
+usa **Express + SQLite** (`npm run dev`), com `VITE_API_URL` e `DATABASE_URL`
+vazias. `npm run dev:remote` e os scripts `db:*` (que usam
+`SUPABASE_DATABASE_URL`) agem sobre a produção, qualquer que seja a branch. Um segundo projeto Supabase só para testes é opcional e exigiria
+credenciais, secrets e `VITE_API_URL` próprios.
 
 Antes de um deploy manual de produção, confirme a branch com:
 

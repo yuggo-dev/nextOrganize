@@ -5,46 +5,49 @@
 | Camada | Arquivo | Papel |
 | --- | --- | --- |
 | Apresentação | `client/src/domains/auth/AuthPage.jsx` | Alternar cadastro e login, consultar sessão e apresentar o painel autenticado |
-| Integração | `client/src/domains/auth/api.js` | Cadastro, login, sessão atual e saída |
+| Integração | `client/src/domains/auth/api.js` | Cadastro, login, sessão atual e saída; guarda o token recebido |
 
-O cadastro usa nome, e-mail e senha de 8 a 128 caracteres e inicia a sessão automaticamente. Ao sair ou receber uma resposta de sessão expirada nas operações autenticadas, o painel é desmontado e o formulário de entrada volta a ser exibido.
+O cadastro usa nome de até 100 caracteres, e-mail de até 254 caracteres e senha de 8 a 128 caracteres e inicia a sessão automaticamente. Ao sair ou receber uma resposta de sessão expirada nas operações autenticadas, o painel é desmontado e o formulário de entrada volta a ser exibido.
 
 ## Backend
 
-| Camada | Arquivo | Papel |
-| --- | --- | --- |
-| Transporte | `server/src/domains/auth/routes.js` | Cookie, middleware de sessão, limite de tentativas e rotas |
-| Aplicação | `server/src/domains/auth/service.js` | Validação, scrypt, comparação de senha e geração de token |
-| Persistência | `server/src/domains/auth/repository.js` | Usuários, sessões e criação transacional da conta com tipos iniciais |
+| Camada | Arquivo | Uso | Papel |
+| --- | --- | --- | --- |
+| Transporte Edge | `server/src/edge/handler.js` | Produção | Bearer, limite de tentativas persistido e rotas |
+| Aplicação | `server/src/domains/auth/service.js` | Ambos | Validação, scrypt, comparação de senha e geração de token |
+| Persistência | `server/src/domains/auth/repository.js` | Ambos | Usuários, sessões e criação transacional da conta com tipos iniciais |
+| Transporte Express | `server/src/domains/auth/routes.js` | Local | Cookie, middleware de sessão, limite de tentativas em memória e rotas |
 
-O e-mail é normalizado em minúsculas. A senha recebe salt individual e hash scrypt. A sessão dura sete dias e seu token é armazenado como hash no banco. O cookie usa HttpOnly e SameSite=Lax. Com `NODE_ENV=production`, exige HTTPS. Cadastro e login permitem até 30 tentativas por IP em uma janela de 15 minutos.
+O e-mail é normalizado em minúsculas. A senha recebe salt individual e hash scrypt. A sessão dura sete dias e somente o hash do token é armazenado no banco. As contas são próprias da aplicação; não são usuários do Supabase Auth.
 
 ## Contrato HTTP
 
+As rotas são relativas à base da API: `https://<project-ref>.supabase.co/functions/v1/tarefas-api` na produção e `/api` no Express local.
+
 | Método | Rota | Corpo | Sucesso |
 | --- | --- | --- | --- |
-| `POST` | `/api/auth/register` | `name`, `email`, `password` | `201` com `user` e cookie |
-| `POST` | `/api/auth/login` | `email`, `password` | `200` com `user` e cookie |
-| `GET` | `/api/auth/me` | — | `200` com `user` ou `null` |
-| `POST` | `/api/auth/logout` | — | `204` e revogação da sessão |
+| `POST` | `/auth/register` | `name`, `email`, `password` | `201` com `user` e a sessão |
+| `POST` | `/auth/login` | `email`, `password` | `200` com `user` e a sessão |
+| `GET` | `/auth/me` | — | `200` com `user` ou `null` |
+| `POST` | `/auth/logout` | — | `204` e revogação da sessão |
 
 As respostas de usuário contêm `id`, `name` e `email`. Dados inválidos retornam `400`, credenciais incorretas retornam `401`, e-mail repetido retorna `409` e excesso de tentativas retorna `429`.
 
-## Variação em Supabase Edge Functions
+## Sessão em produção (Edge Function)
 
-O contrato acima usa o prefixo Express `/api`. Na Edge, a base é
-`/functions/v1/tarefas-api`; os sufixos `/auth/register`, `/auth/login`, `/auth/me`
-e `/auth/logout` permanecem iguais.
+Cadastro e login retornam `{ user, token }`, sem cookie. O frontend guarda o token
+em `sessionStorage` e o envia em `Authorization: Bearer ...`. A saída revoga a
+sessão; fechar a aba remove sua persistência local.
 
-O transporte é `server/src/edge/handler.js`. Cadastro e login retornam
-`{ user, token }`, sem cookie. O frontend guarda o token em `sessionStorage` e o
-envia em `Authorization: Bearer ...`. O banco mantém o hash e a expiração de sete
-dias. A saída revoga a sessão; fechar a aba remove sua persistência local.
+O limite é de 30 tentativas por e-mail em 15 minutos, persistido no PostgreSQL
+(`auth_attempts`) e compartilhado entre workers. A derivação usa `@noble/hashes`
+no Deno, com parâmetros compatíveis com o scrypt do Node.
 
-Na Edge, o limite é de 30 tentativas por e-mail em 15 minutos, persistido no
-PostgreSQL; o limite por IP em memória descrito acima se aplica ao Express.
-A derivação usa `@noble/hashes` no Deno, com parâmetros compatíveis com o scrypt
-existente. As contas não são migradas para Supabase Auth.
+## Sessão no Express (desenvolvimento e servidor próprio)
+
+Cadastro e login retornam `{ user }` e definem o cookie `session`, HttpOnly e
+SameSite=Lax. Com `NODE_ENV=production`, o cookie exige HTTPS. O limite é de 30
+tentativas por IP em 15 minutos, em memória do processo.
 
 Veja [arquitetura](../architecture.md) para as fronteiras de autorização e
-[implantação](../supabase.md) para CORS, secrets e configuração do gateway.
+[Supabase](../supabase.md) para CORS, secrets e configuração do gateway.

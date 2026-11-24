@@ -17,7 +17,7 @@ test('Supabase dry run validates records without modifying the source or connect
     db.close();
     const before = await readFile(filename);
     const result = spawnSync(process.execPath, [new URL('./scripts/migrate-supabase.js', import.meta.url).pathname, '--dry-run'], {
-      env: { ...process.env, DB_PATH: filename, DATABASE_URL: 'invalid-connection-must-not-be-used' }, encoding: 'utf8',
+      env: { ...process.env, DB_PATH: filename, SUPABASE_DATABASE_URL: 'invalid-connection-must-not-be-used' }, encoding: 'utf8',
     });
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /task_occurrences: 1/);

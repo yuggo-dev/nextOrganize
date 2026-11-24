@@ -7,11 +7,11 @@ antes de ações remotas; este arquivo não substitui essa conferência.
 
 | Item | Estado |
 | --- | --- |
-| Banco PostgreSQL (schema `tarefas`) | Publicado, com as migrações de `supabase/migrations/` aplicadas até `202611180002_type_icons.sql` |
+| Banco PostgreSQL (schema `tarefas`) | Publicado, com as migrações de `supabase/migrations/` aplicadas até `202611180002_type_icons.sql`. **Pendente:** `202611240001_notify_time.sql` (horário de notificação e escolha de atraso), a aplicar antes de publicar a função |
 | API `tarefas-api` (Edge Function) | Publicada manualmente pela CLI em `https://<project-ref>.supabase.co/functions/v1/tarefas-api` |
 | `ALLOWED_ORIGINS` | `<URL-do-frontend>`, `http://localhost:5173` e `http://127.0.0.1:5173` |
 | Frontend | `<URL-do-frontend>`; o build precisa de `VITE_API_URL` apontando para a função |
-| Testes locais | `npm test` executa 20 testes Node; no Windows, o teste de simulação da importação falha por montar o caminho do script com `URL.pathname` |
+| Testes locais | `npm test` executa 23 testes Node; no Windows, o teste de simulação da importação falha por montar o caminho do script com `URL.pathname` |
 | Conexões no `.env` | Scripts `db:*` usam `SUPABASE_DATABASE_URL`; o Express só usa PostgreSQL com `DATABASE_URL` (desde 23/11/2026) |
 | Pendências | Deploy da função é manual; não há projeto Supabase separado para desenvolvimento nem deploy automático |
 

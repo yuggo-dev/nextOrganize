@@ -38,6 +38,10 @@ export function openDatabase(filename) {
     if (!columns.has("recurrence")) db.exec("ALTER TABLE tasks ADD COLUMN recurrence TEXT NOT NULL DEFAULT 'none'");
     if (!columns.has("recurrence_until")) db.exec("ALTER TABLE tasks ADD COLUMN recurrence_until TEXT");
     if (!columns.has("recurrence_days")) db.exec("ALTER TABLE tasks ADD COLUMN recurrence_days TEXT NOT NULL DEFAULT '[]'");
+    if (!columns.has("notify_time")) db.exec("ALTER TABLE tasks ADD COLUMN notify_time TEXT");
+    if (!columns.has("tracks_overdue")) db.exec("ALTER TABLE tasks ADD COLUMN tracks_overdue INTEGER NOT NULL DEFAULT 1");
+    // Regulares deixaram de ter horário de conclusão: o antigo vira horário de notificação.
+    db.exec("UPDATE tasks SET notify_time = due_time, due_time = NULL WHERE recurrence <> 'none' AND due_time IS NOT NULL");
     db.exec(`CREATE TABLE IF NOT EXISTS task_occurrences (
       task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
       due TEXT NOT NULL,

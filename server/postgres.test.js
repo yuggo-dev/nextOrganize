@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { postgresDatabase } from './src/infrastructure/postgres.js';
 import { createEdgeHandler } from './src/edge/handler.js';
@@ -8,9 +8,11 @@ import { createApp } from './src/app.js';
 
 test('PostgreSQL API supports accounts, ownership, transactions and daily history', async () => {
   const engine = new PGlite();
-  await engine.exec(await readFile(new URL('../supabase/migrations/202611170001_initial.sql', import.meta.url), 'utf8'));
-  await engine.exec(await readFile(new URL('../supabase/migrations/202611180001_weekly_recurrence.sql', import.meta.url), 'utf8'));
-  await engine.exec(await readFile(new URL('../supabase/migrations/202611180002_type_icons.sql', import.meta.url), 'utf8'));
+  // Todas as migrações, na mesma ordem usada pelos scripts do projeto.
+  const migrations = new URL('../supabase/migrations/', import.meta.url);
+  for (const file of (await readdir(migrations)).filter(name => name.endsWith('.sql')).sort()) {
+    await engine.exec(await readFile(new URL(file, migrations), 'utf8'));
+  }
   // The same SQL and transaction adapter used by node-postgres, backed by a real embedded PostgreSQL.
   const query = (sql, params) => engine.query(sql, params);
   const db = postgresDatabase({ query, connect: async () => ({ query, release() {} }), end: () => engine.close() });
@@ -36,7 +38,10 @@ test('PostgreSQL API supports accounts, ownership, transactions and daily histor
     const task = await call('/tasks',{method:'POST',cookie:a.cookie,body:{title:'Diária',type_id:type.body.id,recurrence:'daily',due:'2026-11-17',due_time:'12:30'}});
     assert.equal(task.status,201);
     assert.equal(task.body.category,'Casa');
-    assert.equal(task.body.due_time,'12:30');
+    // Regulares não têm horário de conclusão: o horário enviado por clientes antigos vira notificação.
+    assert.equal(task.body.due_time,null);
+    assert.equal(task.body.notify_time,'12:30');
+    assert.equal(task.body.tracks_overdue,true);
     assert.deepEqual((await call('/tasks',{cookie:b.cookie})).body,[]);
     assert.equal((await call(`/tasks/${task.body.id}`,{method:'PATCH',cookie:b.cookie,body:{title:'Invadida'}})).status,404);
     for (let i=0;i<2;i++) {

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { FiActivity, FiTrendingUp, FiCheckCircle, FiClock, FiAlertCircle, FiCalendar, FiLayers, FiFlag, FiChevronLeft, FiChevronRight, FiTarget } from 'react-icons/fi';
+import { FiActivity, FiTrendingUp, FiCheckCircle, FiClock, FiAlertCircle, FiCalendar, FiLayers, FiFlag, FiChevronLeft, FiChevronRight, FiTarget, FiMinusCircle } from 'react-icons/fi';
 import TypeIcon from '../task-types/icons.jsx';
 import { buildPerformance } from './model/performance.js';
+import { isoDate } from './model/schedule.js';
 
 function Metric({Icon,label,value,detail,tone,progress,total}) {
   return <article className={`insight-metric metric-${tone}`}>
@@ -20,6 +21,7 @@ export default function PerformanceDashboard({ tasks, now, loading }) {
   const groups = data.types.slice(currentPage * 4, currentPage * 4 + 4);
   const completedAngle = data.total ? data.completed / data.total * 360 : 0;
   const scheduledAngle = data.total ? data.scheduled / data.total * 360 : 0;
+  const overdueEnd = completedAngle + scheduledAngle + (data.total ? data.overdue / data.total * 360 : 0);
   const chartMax = Math.max(1, ...data.days.map(day => day.total));
   const rate = data.total ? `${data.completionRate}%` : '—';
 
@@ -41,12 +43,12 @@ export default function PerformanceDashboard({ tasks, now, loading }) {
         <section className="performance-panel insight-panel insight-overview" aria-labelledby="completion-title">
           <div className="insight-panel-heading"><span className="insight-section-icon"><FiTarget aria-hidden="true" /></span><div><h2 id="completion-title">Visão das atividades</h2><p>Seu ponto de partida para o próximo passo</p></div></div>
           <div className="completion-content">
-            <div className="completion-ring" role="img" aria-label={`${data.completed} concluídas, ${data.scheduled} abertas sem atraso e ${data.overdue} atrasadas`}
-              style={{ background: data.total ? `conic-gradient(var(--success) 0deg ${completedAngle}deg, var(--accent) ${completedAngle}deg ${completedAngle + scheduledAngle}deg, var(--overdue) ${completedAngle + scheduledAngle}deg 360deg)` : 'var(--line)' }}>
+            <div className="completion-ring" role="img" aria-label={`${data.completed} concluídas, ${data.scheduled} abertas sem atraso, ${data.overdue} atrasadas e ${data.missed} não feitas`}
+              style={{ background: data.total ? `conic-gradient(var(--success) 0deg ${completedAngle}deg, var(--accent) ${completedAngle}deg ${completedAngle + scheduledAngle}deg, var(--overdue) ${completedAngle + scheduledAngle}deg ${overdueEnd}deg, var(--muted) ${overdueEnd}deg 360deg)` : 'var(--line)' }}>
               <div><strong>{rate}</strong><span>{data.total ? 'concluídas' : 'Sem atividades'}</span></div>
             </div>
             <div className="insight-status-list">
-              {[{label:'Concluídas',value:data.completed,Icon:FiCheckCircle,tone:'completed'},{label:'Sem atraso',value:data.scheduled,Icon:FiClock,tone:'open'},{label:'Atrasadas',value:data.overdue,Icon:FiAlertCircle,tone:'overdue'}].map(item=><div key={item.tone} className={`insight-status metric-${item.tone}`}><item.Icon aria-hidden="true" /><span>{item.label}</span><strong>{item.value}</strong></div>)}
+              {[{label:'Concluídas',value:data.completed,Icon:FiCheckCircle,tone:'completed'},{label:'Sem atraso',value:data.scheduled,Icon:FiClock,tone:'open'},{label:'Atrasadas',value:data.overdue,Icon:FiAlertCircle,tone:'overdue'},...(data.missed ? [{label:'Não feitas',value:data.missed,Icon:FiMinusCircle,tone:'missed'}] : [])].map(item=><div key={item.tone} className={`insight-status metric-${item.tone}`}><item.Icon aria-hidden="true" /><span>{item.label}</span><strong>{item.value}</strong></div>)}
             </div>
           </div>
           <p className="insight-note"><FiActivity aria-hidden="true" />{!data.total ? 'Suas atividades aparecerão aqui assim que você começar.' : data.completed === data.total ? 'Tudo concluído neste período. Boa conquista!' : `${data.completed} concluídas. Continue no seu ritmo.`}</p>
@@ -68,9 +70,9 @@ export default function PerformanceDashboard({ tasks, now, loading }) {
           <div className="insight-panel-heading"><span className="insight-section-icon"><FiCalendar aria-hidden="true" /></span><div><h2 id="week-performance-title">Prazos nos últimos 7 dias</h2><p>Atividades agrupadas pela data de prazo</p></div></div>
           <div className="chart-legend"><span><i className="status-dot status-completed" />Concluídas</span><span><i className="status-dot status-scheduled" />Abertas</span></div>
           <div className="weekly-chart">
-            {data.days.map(day=><div className="weekly-column" key={day.due} role="img" aria-label={`${day.date.toLocaleDateString('pt-BR')}, ${day.total} atividades com prazo, ${day.completed} concluídas`}>
+            {data.days.map(day=><div className={`weekly-column${day.due === isoDate(now) ? ' is-today' : ''}`} key={day.due} role="img" aria-label={`${day.date.toLocaleDateString('pt-BR')}, ${day.total} atividades com prazo, ${day.completed} concluídas`}>
               <div className="weekly-bar-space" title={`${day.total} atividades · ${day.completed} concluídas`}><span className="weekly-total">{day.total}</span><div className="weekly-bar" style={{height:`${day.total/chartMax*100}%`}}><span style={{height:`${day.total?day.completed/day.total*100:0}%`}} /></div></div>
-              <span className="weekly-day">{day.date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')}</span><span className="insight-chart-date">{day.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</span>
+              <span className="weekly-day">{day.due === isoDate(now) ? 'Hoje' : day.date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')}</span><span className="insight-chart-date">{day.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</span>
             </div>)}
           </div>
         </section>

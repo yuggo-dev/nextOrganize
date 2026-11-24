@@ -19,14 +19,14 @@ As regras de negócio (validação, autorização, recorrência) ficam em `serve
 - Cadastro, login e saída, com tarefas e tipos próprios para cada conta.
 - Resumo de tarefas para hoje, nos próximos sete dias e em aberto.
 - Calendário com marcações coloridas e listagem das tarefas do dia selecionado, inicialmente o dia atual.
-- Cadastro por janela aberta no botão **Nova tarefa**, com título, tipo, prioridade, data e horário de conclusão.
+- Cadastro por janela aberta no botão **Nova tarefa**, com título, tipo, prioridade e data. Pontuais podem ter horário de conclusão ou não; regulares têm horário de notificação opcional (os lembretes ainda não são enviados).
 - Tipos personalizados com nome, cor e ícone, criados em **Tipos → Novo tipo** ou durante o cadastro de uma tarefa e editáveis em **Tipos → Personalizar tipos**.
-- Edição de tarefas (título, tipo, prioridade, data e horário) pelo botão de lápis do card.
-- Tarefas de hoje priorizadas na ordenação e atrasadas com selo **Atrasada**, borda tracejada e contagem no atalho **Em aberto**.
+- Edição de tarefas (título, tipo, prioridade, data e horário) pelo menu `⋯` do card.
+- Tarefas de hoje priorizadas na ordenação e atrasadas com selo **Atrasada** e contagem no atalho **Em aberto**. Cada regular escolhe se um dia passado sem conclusão fica **Atrasada** ou só **Não feita**.
 - Conclusão, reabertura, exclusão, filtro por tipo e opção de ocultar concluídas.
 - Tarefas diárias ou em dias da semana selecionados, com duração por dias/semanas ou data final, conclusão independente por ocorrência e combo de ocorrências cumpridas.
-- Lista com rolagem interna, mantendo o calendário e os controles visíveis. Em telas estreitas, o calendário aparece acima da lista.
-- Seção retrátil **Atividades regulares** (diárias e semanais), com contagem de concluídas no cabeçalho, e seção **Atividades pontuais**.
+- Lista com rolagem interna, mantendo o calendário e os controles visíveis. No celular, a página não rola: a lista ocupa a tela e o calendário abre como uma aba no pé da tela.
+- Lista do dia com as regulares (diárias e semanais) e depois as pontuais, separadas por subtítulos com a contagem de concluídas.
 - Interface com navegação lateral, tema escuro inicial em tons azul-acinzentados e opção de alternar para o tema claro.
 - Busca por título ou tipo de atividade, aplicada à lista e às marcações do calendário.
 - Navegação entre **Início**, com a agenda, e **Desempenho**, com taxa de conclusão, pendências e gráficos por tipo, prioridade e data de prazo.
@@ -71,11 +71,11 @@ O Express serve o build e a API em `http://localhost:3001`. Com `DATABASE_URL` p
 ## Como usar
 
 1. Crie sua conta com nome (até 100 caracteres), e-mail e senha de 8 a 128 caracteres ou entre com uma conta existente.
-2. Clique em **Nova tarefa** e informe título, tipo, prioridade, data e horário.
+2. Clique em **Nova tarefa** e informe título, tipo, prioridade e data; numa pontual, escolha **Com** ou **Sem** horário.
 3. Use **Tipos → Novo tipo** para criar categorias como Trabalho, Físico e Alimentação com suas próprias cores e ícones.
 4. Selecione um dia no calendário para consultar suas tarefas. Os atalhos **Hoje**, **7 dias** e **Em aberto** da barra da agenda abrem as respectivas listas.
 5. Use a caixa de seleção para concluir ou reabrir uma tarefa. Pendências que passaram do prazo recebem o selo **Atrasada** e são contadas em **Em aberto**.
-6. Role a lista ao lado do calendário para acessar as demais tarefas. Clique em **Atividades regulares** para recolher ou expandir as repetições.
+6. Role a lista ao lado do calendário para acessar as demais tarefas.
 
 Para criar uma tarefa periódica, selecione **Repetição → Todos os dias** ou **Dias da semana** na janela de cadastro. Informe a data inicial, o horário e, se desejar, uma duração ou data final. O card mostra **Diária** ou **Periódica** e o combo atual quando houver ocorrências consecutivas concluídas. No menu `⋯`, é possível usar **Remover só deste dia** ou **Excluir repetição e histórico**.
 
@@ -86,6 +86,7 @@ Comece pelo [índice da documentação](docs/README.md). Consulte também:
 - [Branches: produção e desenvolvimento](docs/branches.md)
 - [Ferramentas e comandos](docs/tools.md)
 - [Arquitetura: Supabase principal e backend local](docs/architecture.md)
+- [Histórico: mudanças por data e o que está planejado](docs/historico.md)
 - [Estado da integração com Supabase](docs/migration-status.md)
 - [Supabase: produção, publicação e manutenção](docs/supabase.md)
 
@@ -135,6 +136,7 @@ supabase/
 docs/
 ├── README.md                   # Índice da documentação
 ├── architecture.md, tools.md, branches.md, supabase.md, migration-status.md
+├── historico.md                # Mudanças por data e próximas mudanças planejadas
 └── domains/                    # Documentação de cada domínio
 ```
 

@@ -9,6 +9,7 @@ import TaskDialog from "./components/TaskDialog.jsx";
 import TaskList from "./components/TaskList.jsx";
 import TypeManager from "../task-types/TypeManager.jsx";
 import PerformanceDashboard from "./PerformanceDashboard.jsx";
+import { LogoMark } from "../../shared/components/Logo.jsx";
 
 export default function Dashboard({ user, onLogout, loggingOut, sessionError }) {
   const { tasks: records, types, loading, error, setError, addTask, addType, editTask, updateType, toggleTask, deleteTask, deleteSeries } = useTasks();
@@ -80,6 +81,7 @@ export default function Dashboard({ user, onLogout, loggingOut, sessionError }) 
 
   return <div className={`app-frame${screen === "home" ? " agenda-frame" : " insights-frame"}`}>
     <aside className="sidebar" aria-label="Navegação principal">
+      <LogoMark size={36} title="nextOrganize" className="sidebar-logo" />
       <nav className="sidebar-navigation" aria-label="Telas da aplicação">
         <button type="button" className="sidebar-button" aria-label="Início" title="Início"
           aria-pressed={screen === "home"} onClick={() => setScreen("home")}>

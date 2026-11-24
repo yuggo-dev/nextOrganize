@@ -6,13 +6,14 @@
 | --- | --- | --- |
 | Apresentação | `client/src/domains/tasks/Dashboard.jsx` | Compor resumo, seleção de data, filtros e ações |
 | Apresentação | `client/src/domains/tasks/PerformanceDashboard.jsx` | Indicadores, filtros de período e gráficos de desempenho |
-| Apresentação | `components/Calendar.jsx` | Mês de 42 células com contagem e cores dos tipos de cada dia |
-| Apresentação | `components/TaskList.jsx` | Lista com rolagem interna e seções para tarefas diárias e avulsas |
-| Apresentação | `components/TaskDialog.jsx` | Cadastro em janela com título, tipo, prioridade, data e horário |
+| Apresentação | `components/Calendar.jsx` | Mês de 42 células com ícones das pontuais e pontos das regulares |
+| Apresentação | `components/TaskList.jsx` | Lista com rolagem interna e seções **Atividades regulares** e **Atividades pontuais** |
+| Apresentação | `components/TaskDialog.jsx` | Cadastro e edição em janela com título, tipo, prioridade, data, horário e repetição |
 | Aplicação | `hooks/useTasks.js` | Carga inicial e atualização do estado após operações da API |
 | Regras | `model/schedule.js` | Datas locais, atrasos, próximos dias e ordenação |
 | Regras | `model/performance.js` | Taxa de conclusão, distribuição de status e agregação por tipo, prioridade e prazo |
-| Regras | `model/recurrence.js` | Repetição diária, ocorrências por data e combo de dias consecutivos |
+| Regras | `model/recurrence.js` | Repetição diária e semanal, ocorrências por data e combo de ocorrências consecutivas |
+| Regras | `model/calendar.js` | Agrupamento e ordenação dos marcadores de cada dia do calendário |
 | Integração | `api.js` | Listagem, criação, atualização e exclusão |
 
 Os caminhos abreviados na tabela pertencem a `client/src/domains/tasks/`.
@@ -24,23 +25,22 @@ Os caminhos abreviados na tabela pertencem a `client/src/domains/tasks/`.
 - O resumo mostra tarefas em aberto para hoje, para os próximos sete dias e o total em aberto. Os atalhos Hoje, 7 dias e Em aberto na barra da agenda abrem as respectivas seleções.
 - Uma tarefa fica atrasada após sua data ou após o horário de conclusão no dia atual. Uma tarefa antiga sem horário fica atrasada quando a data passa.
 - A ordenação apresenta primeiro as tarefas de hoje com prazo em aberto, depois as futuras, as sem prazo, as atrasadas e as concluídas. Dentro desses grupos, considera data, horário e prioridade.
-- Cada tarefa atrasada recebe texto de status e borda tracejada. A cor do tipo continua visível. O resumo informa quantas atividades abertas estão atrasadas.
-- As cores e os números no calendário representam as tarefas que passam pelos filtros de tipo e conclusão.
-- Os dias mostram a quantidade total de tarefas e até quatro marcadores nas cores dos tipos, sem repetir cores. Dias com todas as tarefas concluídas têm indicadores atenuados. Os detalhes das atividades aparecem na lista ao selecionar o dia.
+- Cada tarefa atrasada recebe o selo **Atrasada** e borda tracejada. A cor do tipo continua visível. Não há uma seção separada de atrasadas: o atalho **Em aberto** informa quantas atividades abertas estão atrasadas.
+- Os marcadores do calendário representam as tarefas que passam pelos filtros de tipo, busca e conclusão. A forma dos marcadores está descrita em [Calendário: pontuais e regulares](#calendário-pontuais-e-regulares). Os detalhes das atividades aparecem na lista ao selecionar o dia.
 - A lista usa uma apresentação de agenda com horário acima de cada card e faixa na cor do tipo. A busca por título ou tipo filtra a lista e o calendário, combinada aos demais filtros. O resumo considera todas as tarefas da conta.
 - A tela usa a altura da janela. Em telas estreitas, calendário e lista ficam empilhados. A lista tem rolagem interna e permite navegação pelo teclado quando recebe foco. Alterar a data ou os filtros retorna a rolagem ao início.
-- A seção **Rotina diária** é retrátil e começa expandida. Clique no cabeçalho ou use Enter ou Espaço quando ele receber foco para recolher ou expandir as diárias. A contagem de concluídas permanece no cabeçalho. Recolher a seção mantém as atividades nos indicadores e no calendário.
-- A janela de cadastro preenche a data selecionada e exige que o usuário informe o horário. O título aceita até 120 caracteres na interface.
+- A seção **Atividades regulares** (diárias e semanais) é retrátil e começa expandida. Clique no cabeçalho ou use Enter ou Espaço quando ele receber foco para recolher ou expandir as repetições. A contagem de concluídas permanece no cabeçalho. Recolher a seção mantém as atividades nos indicadores e no calendário. As tarefas avulsas ficam em **Atividades pontuais**.
+- A janela de cadastro preenche a data selecionada e exige que o usuário informe o horário. O título aceita até 200 caracteres, o mesmo limite da API.
 
 ### Tarefas diárias e combo
 
-No cadastro, a repetição pode ser **Uma vez** ou **Todos os dias**. Uma diária usa a data informada como início, repete no mesmo horário e pode ter uma data final opcional. Cada data possui conclusão própria. O calendário expande as repetições para o mês em exibição, e selecionar um dia mostra sua ocorrência na lista.
+No cadastro, a repetição pode ser **Uma vez**, **Todos os dias** ou **Dias da semana** (descrita em [Repetição em dias selecionados](#repetição-em-dias-selecionados)). Uma diária usa a data informada como início, repete no mesmo horário e pode ter uma data final opcional. Cada data possui conclusão própria. O calendário expande as repetições para o mês em exibição, e selecionar um dia mostra sua ocorrência na lista.
 
-As diárias têm cards compactos em estilo checklist, com checkbox circular, identificação de repetição, combo e horário dentro do card. O espaçamento entre esses cards é reduzido. Na visualização separada, a seção **Rotina diária** mostra quantas ocorrências visíveis foram concluídas.
+As periódicas têm cards compactos em estilo checklist, com checkbox circular, identificação **Diária** ou **Periódica**, combo e horário dentro do card. O espaçamento entre esses cards é reduzido. A seção **Atividades regulares** mostra quantas ocorrências visíveis foram concluídas.
 
 O combo conta dias consecutivos marcados como concluídos. A sequência de ontem continua visível enquanto o dia atual está em aberto. Concluir hoje aumenta o combo. Um dia anterior sem conclusão ou um dia removido interrompe a sequência. Datas futuras concluídas antecipadamente entram na sequência quando sua data chegar.
 
-O menu `⋯` do card oferece **Remover só deste dia** e **Excluir diária e histórico**. A primeira opção registra uma exceção para aquela data. A segunda remove a definição e suas conclusões. Reabrir um dia atualiza a sequência e os indicadores.
+O menu `⋯` do card oferece **Remover só deste dia** e **Excluir repetição e histórico**. A primeira opção registra uma exceção para aquela data. A segunda remove a definição e suas conclusões. Reabrir um dia atualiza a sequência e os indicadores.
 
 O resumo e as listas gerais incluem o histórico de diárias e os próximos sete dias. O dashboard de desempenho considera as ocorrências diárias até o dia atual. A navegação por meses futuros expande apenas a visualização do calendário, preservando os indicadores históricos. As tarefas avulsas seguem suas próprias datas.
 
@@ -54,36 +54,41 @@ Os tipos são paginados em grupos de quatro. A conclusão por prioridade usa a m
 
 ## Backend
 
-| Camada | Arquivo | Papel |
-| --- | --- | --- |
-| Transporte | `server/src/domains/tasks/routes.js` | Rotas autenticadas de tarefas |
-| Aplicação | `server/src/domains/tasks/service.js` | Validar campos e resolver um tipo pertencente ao usuário |
-| Persistência | `server/src/domains/tasks/repository.js` | Consultas com `user_id` e associação ao nome e cor do tipo |
-| Validação | `server/src/domains/tasks/validation.js` | Datas reais e limites de cada ocorrência diária |
+| Camada | Arquivo | Uso | Papel |
+| --- | --- | --- | --- |
+| Transporte Edge | `server/src/edge/handler.js` | Produção | Rotas autenticadas por Bearer |
+| Validação e regras | `server/src/domains/tasks/service.js` | Ambos | `validateTask` compartilhado; seleciona `postgres-service.js` no PostgreSQL ou coordena o SQLite |
+| Coordenação PostgreSQL | `server/src/domains/tasks/postgres-service.js` | Produção | Transações assíncronas e resolução do tipo da conta |
+| Validação de datas | `server/src/domains/tasks/validation.js` | Ambos | Datas reais e limites de cada ocorrência periódica |
+| Persistência | `server/src/domains/tasks/repository.js` | Ambos | Consultas SQLite com `user_id`, ou encaminhamento para `infrastructure/postgres-repositories.js` |
+| Transporte Express | `server/src/domains/tasks/routes.js` | Local | Rotas autenticadas por cookie |
 
 Criação e atualização são transacionais. O proprietário vem da sessão. A API verifica a propriedade tanto das tarefas quanto dos tipos.
 
 ## Contrato HTTP
 
+As rotas são relativas à base da API: `https://<project-ref>.supabase.co/functions/v1/tarefas-api` na produção e `/api` no Express local.
+
 | Método | Rota | Sucesso |
 | --- | --- | --- |
-| `GET` | `/api/tasks` | `200` com lista em ordem decrescente de ID |
-| `POST` | `/api/tasks` | `201` com tarefa criada |
-| `PATCH` | `/api/tasks/:id` | `200` com tarefa atualizada |
-| `DELETE` | `/api/tasks/:id` | `204` |
+| `GET` | `/tasks` | `200` com lista em ordem decrescente de ID |
+| `POST` | `/tasks` | `201` com tarefa criada |
+| `PATCH` | `/tasks/:id` | `200` com tarefa atualizada |
+| `DELETE` | `/tasks/:id` | `204` |
 
 | Campo | Formato | Regra |
 | --- | --- | --- |
-| `title` | Texto | Obrigatório, sem espaços nas extremidades, limitado a 200 caracteres na API |
+| `title` | Texto | Obrigatório, sem espaços nas extremidades. Textos acima de 200 caracteres são cortados nesse limite, sem erro |
 | `type_id` | Inteiro | ID de um tipo da conta autenticada |
 | `category` | Texto | Compatibilidade com clientes anteriores, usado quando `type_id` é omitido. Resolve ou cria um tipo com esse nome. Padrão `Pessoal`. |
 | `priority` | Inteiro | `1` alta, `2` média, `3` baixa. Padrão `2`. |
 | `due` | `YYYY-MM-DD` ou `null` | Data válida. Continua opcional na API para aceitar tarefas antigas sem prazo. |
 | `due_time` | `HH:mm` ou `null` | Horário local de 24 horas, associado a uma data. Opcional na API. |
 | `done` | Booleano | Aceito na atualização. Novas tarefas começam abertas. |
-| `recurrence` | Texto | `none` para tarefa avulsa, padrão, ou `daily` para repetição diária |
+| `recurrence` | Texto | `none` para tarefa avulsa (padrão), `daily` para repetição diária ou `weekly` para dias da semana |
+| `recurrence_days` | Array de inteiros | Obrigatório com `weekly`: dias de `0` (domingo) a `6` (sábado), normalizados sem duplicatas |
 | `recurrence_until` | `YYYY-MM-DD` ou `null` | Data final inclusiva, opcional, igual ou posterior à data inicial |
-| `occurrence_date` | `YYYY-MM-DD` | Usado com `done` no `PATCH` para concluir ou reabrir um dia de uma tarefa diária |
+| `occurrence_date` | `YYYY-MM-DD` | Usado com `done` no `PATCH` para concluir ou reabrir um dia de uma tarefa periódica |
 
 Exemplo de criação com um ID de tipo pertencente à conta.
 
@@ -97,25 +102,23 @@ Exemplo de criação com um ID de tipo pertencente à conta.
 }
 ```
 
-As respostas também incluem `id`, `created_at`, `category` e `category_color`. A lista utiliza nome e cor retornados pelo servidor.
+As respostas também incluem `id`, `created_at`, `category`, `category_color` e `category_icon`; as periódicas trazem ainda `occurrences`. A lista utiliza nome, cor e ícone retornados pelo servidor.
 
 O `PATCH` preserva campos omitidos. Enviar `due_time: null` remove o horário. Enviar `due: null` remove data e horário. Uma atualização de tarefa de outra conta retorna `404`. Datas, horários, prioridades ou tipos inválidos retornam `400`.
 
-Uma tarefa diária exige `due`. Para concluir uma ocorrência, envie `{"occurrence_date":"2026-11-20","done":true}` ao `PATCH /api/tasks/:id`, usando o ID da definição. A resposta traz a definição com o array `occurrences`, cujos itens contêm `due`, `done` e `skipped`.
+Uma tarefa periódica exige `due`, que é a data inicial. Para concluir uma ocorrência, envie `{"occurrence_date":"2026-11-20","done":true}` ao `PATCH /tasks/:id`, usando o ID da definição. A resposta traz a definição com o array `occurrences`, cujos itens contêm `due`, `done` e `skipped`.
 
-O `DELETE /api/tasks/:id?date=YYYY-MM-DD` remove só a ocorrência indicada e retorna `200` com a definição atualizada. O `DELETE` sem data exclui a definição e seu histórico e retorna `204`. A chave composta de tarefa e data impede duplicação em novas tentativas. As verificações de propriedade da tarefa são aplicadas antes de qualquer alteração.
+O `DELETE /tasks/:id?date=YYYY-MM-DD` remove só a ocorrência indicada e retorna `200` com a definição atualizada. O `DELETE` sem data exclui a definição e seu histórico e retorna `204`. A chave composta de tarefa e data impede duplicação em novas tentativas. As verificações de propriedade da tarefa são aplicadas antes de qualquer alteração.
 
-## Execução com PostgreSQL e Edge
+## Diferenças entre produção e Express
 
-`tasks/service.js` seleciona `postgres-service.js` para o adaptador PostgreSQL.
-Os repositórios de domínio encaminham as operações para
-`infrastructure/postgres-repositories.js`; o adaptador mantém uma conexão por
-transação. As consultas preservam o filtro de proprietário e o contrato JSON.
-
-Na Edge, `server/src/edge/handler.js` recebe as requisições; substitua o prefixo
-`/api` das rotas acima por `/functions/v1/tarefas-api`. A autenticação usa Bearer.
-O frontend usa `VITE_API_URL` para escolher a base sem alterar as regras de agenda.
-A implantação efetiva está registrada em [estado da integração](../migration-status.md).
+Na produção, `server/src/edge/handler.js` recebe as requisições, autentica por
+Bearer e usa PostgreSQL; o adaptador mantém uma conexão por transação. `POST` e
+`PATCH` sem `Content-Type: application/json` retornam `415`, e corpos acima de
+16 KB retornam `413`. O Express local aplica o mesmo limite de tamanho, autentica
+por cookie e usa SQLite. As duas versões da coordenação preservam o filtro de
+proprietário e o mesmo contrato JSON; ao mudar uma, mude a outra. O frontend usa
+`VITE_API_URL` para escolher a base sem alterar as regras de agenda.
 
 
 ## Repetição em dias selecionados

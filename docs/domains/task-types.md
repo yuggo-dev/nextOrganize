@@ -4,57 +4,65 @@
 
 | Camada | Arquivo | Papel |
 | --- | --- | --- |
-| Apresentação | `client/src/domains/task-types/TypeForm.jsx` | Nome, seletor de cor, sugestões de cores e prévia |
-| Integração | `client/src/domains/task-types/api.js` | Listar e criar tipos da conta |
+| Apresentação | `client/src/domains/task-types/TypeForm.jsx` | Nome, seletor de cor, sugestões de cores, ícone e prévia |
+| Apresentação | `client/src/domains/task-types/TypeManager.jsx` | Escolher um tipo existente e editá-lo com o mesmo `TypeForm` |
+| Apresentação | `client/src/domains/task-types/IconPicker.jsx` | Seletor de ícones com grupos, busca e opção Automático |
+| Catálogo | `client/src/domains/task-types/icons.jsx` | Ícones disponíveis, sugestão automática pelo nome e componente `TypeIcon` |
+| Integração | `client/src/domains/task-types/api.js` | Listar, criar e atualizar tipos da conta |
 
 O menu **Tipos → Novo tipo** abre o formulário. A janela de nova tarefa também permite criar um tipo e retornar ao cadastro com o tipo recém-criado selecionado. As cores aparecem na borda e no marcador da tarefa e nos dias do calendário.
 
 ## Backend
 
-| Camada | Arquivo | Papel |
-| --- | --- | --- |
-| Transporte e validação | `server/src/domains/task-types/routes.js` | Validar nome e cor e retornar os tipos do usuário |
-| Persistência | `server/src/domains/task-types/repository.js` | Consultar, criar e inicializar tipos por conta |
+| Camada | Arquivo | Uso | Papel |
+| --- | --- | --- | --- |
+| Transporte Edge | `server/src/edge/handler.js` | Produção | Rotas autenticadas por Bearer |
+| Aplicação | `server/src/domains/task-types/service.js` | Ambos | Validar nome, cor e ícone e traduzir duplicidade em `409` |
+| Persistência | `server/src/domains/task-types/repository.js` | Ambos | Consultar, criar, atualizar e inicializar tipos por conta (SQLite ou `infrastructure/postgres-repositories.js`) |
+| Transporte Express | `server/src/domains/task-types/routes.js` | Local | Rotas autenticadas por cookie |
 
-Uma conta recebe sugestões iniciais de Trabalho, Físico, Alimentação, Pessoal e Estudos e pode cadastrar novos tipos. Nomes são únicos dentro da conta, com comparação sem distinção entre maiúsculas e minúsculas segundo a collation NOCASE do SQLite. Contas diferentes podem usar os mesmos nomes.
+Uma conta recebe sugestões iniciais de Trabalho, Físico, Alimentação, Pessoal e Estudos e pode cadastrar novos tipos. Nomes são únicos dentro da conta, sem distinção entre maiúsculas e minúsculas. Contas diferentes podem usar os mesmos nomes.
 
-Na migração, as categorias existentes também são cadastradas como tipos. Categorias sem cor anterior recebem `#64748b`.
+Na migração de dados antigos, as categorias existentes também são cadastradas como tipos. Categorias sem cor anterior recebem `#64748b`.
 
 ## Contrato HTTP
 
+As rotas são relativas à base da API: `https://<project-ref>.supabase.co/functions/v1/tarefas-api` na produção e `/api` no Express local.
+
 | Método | Rota | Sucesso |
 | --- | --- | --- |
-| `GET` | `/api/task-types` | `200` com lista de `{ id, name, color }` |
-| `POST` | `/api/task-types` | `201` com tipo criado |
+| `GET` | `/task-types` | `200` com lista de `{ id, name, color, icon }`, em ordem de ID |
+| `POST` | `/task-types` | `201` com tipo criado |
+| `PATCH` | `/task-types/:id` | `200` com tipo atualizado (veja [Personalizar um tipo existente](#personalizar-um-tipo-existente)) |
 
 ```json
 {
   "name": "Alimentação",
-  "color": "#f59e0b"
+  "color": "#f59e0b",
+  "icon": "FaUtensils"
 }
 ```
 
-O nome precisa ter de 1 a 60 caracteres após remover espaços nas extremidades. A cor deve seguir `#RRGGBB`. Dados inválidos retornam `400` e nome repetido retorna `409`. As duas rotas exigem autenticação.
+O nome precisa ter de 1 a 60 caracteres após remover espaços nas extremidades. A cor deve seguir `#RRGGBB` e é gravada em minúsculas. `icon` é opcional (veja [Ícones por tipo](#ícones-por-tipo)). Dados inválidos retornam `400` e nome repetido retorna `409`. Todas as rotas exigem autenticação.
 
-## Execução com PostgreSQL e Edge
+## Diferenças entre produção e Express
 
-Em PostgreSQL, os nomes são comparados com `lower(name)` e um índice único por
-usuário; em SQLite, a regra usa `COLLATE NOCASE`. As regras de comparação Unicode
-podem variar entre bancos, portanto não se deve assumir equivalência completa
-das duas collations para todo caractere.
+Na produção (PostgreSQL), os nomes são comparados com `lower(name)` e um índice
+único por usuário. No SQLite local, a regra usa `COLLATE NOCASE`. As regras de
+comparação Unicode variam entre os bancos: um nome com acento ou caractere especial
+aceito localmente pode ser recusado como duplicado na produção, ou o contrário.
+Em caso de dúvida, o comportamento de referência é o do PostgreSQL.
 
-O SQL remoto está em `infrastructure/postgres-repositories.js`. O handler Edge
-valida os mesmos campos de nome/cor e usa a sessão Bearer. Substitua o prefixo
-`/api` por `/functions/v1/tarefas-api` nas rotas acima. A API exige a propriedade
-do tipo antes de associá-lo a uma tarefa.
+Nos dois transportes, a validação é a mesma (`service.js`) e a API exige a
+propriedade do tipo antes de associá-lo a uma tarefa.
 
 
 ## Personalizar um tipo existente
 
 A opção **Tipos → Personalizar tipos** da agenda abre `TypeManager.jsx`. Selecione um tipo
 e altere nome/cor no mesmo `TypeForm` usado para criação. A atualização usa
-`PATCH /api/task-types/:id` (ou o mesmo sufixo na base Edge), enviando `name` e
-`color`. Responde `200` com `{ id, name, color }`, `404` para tipo inexistente/de
+`PATCH /task-types/:id`, enviando `name` e
+`color` e, opcionalmente, `icon`. Responde `200` com `{ id, name, color, icon }`, `404` para tipo inexistente/de
 outra conta, `400` para dados inválidos e `409` para nome duplicado na conta.
 
 `task-types/service.js` compartilha a validação entre Express e Edge. O repositório

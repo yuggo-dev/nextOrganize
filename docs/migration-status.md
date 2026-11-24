@@ -1,9 +1,24 @@
 # Estado da integração com Supabase
 
-Registro de implementação em 17/11/2026. Este arquivo descreve evidências locais;
-não atesta o estado do projeto remoto sem uma verificação posterior.
+## Estado atual
 
-## Implementado no repositório
+Resumo do estado registrado (última verificação remota em 18/11/2026). Confira o ambiente real
+antes de ações remotas; este arquivo não substitui essa conferência.
+
+| Item | Estado |
+| --- | --- |
+| Banco PostgreSQL (schema `tarefas`) | Publicado, com as migrações de `supabase/migrations/` aplicadas até `202611180002_type_icons.sql` |
+| API `tarefas-api` (Edge Function) | Publicada manualmente pela CLI em `https://lykruvajikxyfzcvtzzb.supabase.co/functions/v1/tarefas-api` |
+| `ALLOWED_ORIGINS` | `https://nextorganize.netlify.app`, `http://localhost:5173` e `http://127.0.0.1:5173` |
+| Frontend | `https://nextorganize.netlify.app`; o build precisa de `VITE_API_URL` apontando para a função |
+| Testes locais | `npm test` executa 20 testes Node; no Windows, o teste de simulação da importação falha por montar o caminho do script com `URL.pathname` |
+| Conexões no `.env` | Scripts `db:*` usam `SUPABASE_DATABASE_URL`; o Express só usa PostgreSQL com `DATABASE_URL` (desde 23/11/2026) |
+| Pendências | Deploy da função é manual; não há projeto Supabase separado para desenvolvimento nem deploy automático |
+
+As seções abaixo são o histórico das etapas, em ordem cronológica. As contagens
+de testes citadas nelas refletem o tamanho da suíte naquela data.
+
+## Implementado no repositório (17/11/2026)
 
 - Seleção de PostgreSQL por `DATABASE_URL`, mantendo SQLite no desenvolvimento.
 - Exigência de PostgreSQL ao iniciar Express com `NODE_ENV=production`.
@@ -16,7 +31,7 @@ não atesta o estado do projeto remoto sem uma verificação posterior.
 - Frontend configurável por `VITE_API_URL`, com sessão remota em `sessionStorage`.
 - Script de preparação da função e alternativa de execução com Docker.
 
-## Validação local registrada
+## Validação local registrada (17/11/2026)
 
 | Verificação | Resultado |
 | --- | --- |
@@ -70,9 +85,10 @@ CLI, porque as ferramentas MCP não estavam disponíveis na sessão.
 
 ## Decisão de arquitetura
 
-A preferência informada é hospedar o frontend separadamente e colocar banco e
-API no Supabase. Express/SQLite continuam úteis para desenvolvimento local.
-Docker permanece como alternativa de hospedagem, sem ser requisito dessa escolha.
+Frontend hospedado separadamente; banco e API no Supabase, que é o ambiente
+principal. Express + SQLite ficam para desenvolvimento local. Express + PostgreSQL
+e o Docker ficam em segundo plano, como base para um eventual servidor próprio.
+Atualizado em 23/11/2026; detalhes em [Arquitetura](architecture.md#papel-de-cada-ambiente).
 
 Antes de retomar ações remotas, confira [o procedimento de implantação](supabase.md)
 e os valores configurados no ambiente, sem publicar credenciais na documentação.
@@ -117,3 +133,30 @@ A verificação remota confirmou preflight de login com HTTP 204 e cabeçalho de
 origem correto, consulta de sessão sem login com HTTP 200, acesso local mantido
 e bloqueio HTTP 403 para uma origem não autorizada. Não foram alteradas contas
 ou tarefas nesta configuração.
+
+## Papéis dos ambientes e conexões separadas — 23/11/2026
+
+O Supabase passou a ser documentado como ambiente principal. Express + SQLite
+ficou para desenvolvimento local, e Express + PostgreSQL (Docker) como base de um
+eventual servidor próprio. Os papéis estão em
+[Arquitetura](architecture.md#papel-de-cada-ambiente).
+
+Antes, o Express e os scripts `db:*` liam a mesma `DATABASE_URL` do `.env`.
+Preenchê-la para uma migração fazia o `npm run dev` gravar no banco de produção
+sem aviso. Agora:
+
+- os scripts `db:schema:supabase` e `db:migrate:supabase` leem
+  `SUPABASE_DATABASE_URL`, por meio de `server/scripts/supabase-env.js`;
+- se só `DATABASE_URL` estiver definida, os scripts param e pedem para renomeá-la;
+- o Express ignora `SUPABASE_DATABASE_URL` e só usa PostgreSQL com `DATABASE_URL`;
+  fora de `NODE_ENV=production`, avisa no terminal ao iniciar nesse modo;
+- `.env.example` foi reorganizado por ambiente.
+
+**Ação necessária:** em qualquer máquina com um `.env` antigo, renomeie
+`DATABASE_URL` para `SUPABASE_DATABASE_URL`. A Edge Function não muda: continua
+usando o secret `TAREFAS_DATABASE_URL`.
+
+Verificação local: 19 de 20 testes Node passaram; a falha é a do teste de simulação
+no Windows, já registrada no estado atual. A simulação da importação, as mensagens
+de configuração dos scripts e o aviso do Express foram conferidos manualmente.
+Nenhuma conexão com o Supabase foi feita nesta etapa.

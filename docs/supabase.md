@@ -1,97 +1,51 @@
-# Supabase e execução remota
+# Supabase: produção e manutenção
 
-## Uso local com API e banco já publicados
+O Supabase é o ambiente **principal** da aplicação: a API roda na Edge Function
+`tarefas-api` e os dados ficam no PostgreSQL do projeto `lykruvajikxyfzcvtzzb`.
+O frontend é publicado separadamente, em `https://nextorganize.netlify.app`.
+Express e SQLite servem ao desenvolvimento local; veja os papéis de cada ambiente
+em [Arquitetura](architecture.md#papel-de-cada-ambiente).
 
-Ambiente verificado em 18/11/2026. O banco foi importado, a função publicada e
-`client/.env.local` configurado. Execute:
+## Publicar uma mudança
 
-```sh
-npm run dev:remote
-```
+Faça a publicação a partir da `main`, com as alterações aprovadas já commitadas
+(veja [Branches](branches.md)).
 
-Abra `http://localhost:5173` e entre com a conta existente. Não é preciso iniciar
-Express, refazer a importação ou publicar a função a cada mudança no frontend.
-Se Vite já estiver rodando nessa porta, use a instância existente. Mudanças em
-regras/API exigem preparar e publicar a função novamente.
+1. **Schema**, se a mudança incluir um novo arquivo em `supabase/migrations/`:
 
-A conexão local usa `PG_CA_PATH=supabase/certs/prod-ca-2021.crt`. Esse certificado
-público foi obtido da distribuição oficial; a verificação TLS permanece ativa.
-O restante deste documento descreve preparação e manutenção. Não repita a
-importação no destino preenchido. Veja [estado da integração](migration-status.md).
+   ```sh
+   npm run db:schema:supabase
+   ```
 
+   Aplica todos os arquivos de `supabase/migrations/` em ordem, numa transação.
+   Pode ser repetido e não sobrescreve dados. Exige `SUPABASE_DATABASE_URL` no `.env`
+   (veja [Conexão para scripts](#conexão-para-scripts)).
 
-A API seleciona PostgreSQL quando `DATABASE_URL` está preenchida. Sem essa variável,
-continua usando SQLite em desenvolvimento. Em produção, exige PostgreSQL para
-não gravar dados em um disco temporário da hospedagem.
+2. **Função**, sempre que `server/src/` mudar:
 
-## Conexão
+   ```sh
+   npm run edge:prepare
+   npx --yes supabase functions deploy tarefas-api --remote=lykruvajikxyfzcvtzzb --use-api
+   ```
 
-Copie `.env.example` para `.env` na raiz. Em **Connect → Session pooler** no painel
-do projeto `lykruvajikxyfzcvtzzb`, copie a conexão PostgreSQL para `DATABASE_URL`,
-preenchendo a senha codificada para URL. Se necessário, baixe o certificado CA do
-projeto e configure `PG_CA_PATH`. A validação TLS permanece habilitada.
+   `edge:prepare` copia os módulos de `server/src/` para
+   `supabase/functions/_shared/backend/`, diretório gerado e ignorado pelo Git.
+   O deploy exige a Supabase CLI autenticada.
 
-A URL `https://...supabase.co` e a chave pública não substituem essa conexão.
-O MCP serve à administração do projeto pelo agente; a API em produção usa sua
-própria conexão. Nunca coloque `DATABASE_URL` em variáveis `VITE_*` ou no frontend.
+3. **Frontend**: a hospedagem estática gera o build a partir de `client`, com
+   comando `npm ci && npm run build`, publicando `dist`. Configure **antes do build**:
 
-Referência: https://supabase.com/docs/guides/database/connecting-to-postgres
+   ```env
+   VITE_API_URL=https://lykruvajikxyfzcvtzzb.supabase.co/functions/v1/tarefas-api
+   ```
 
-## Migrar os dados locais
+4. **Conferência**: entre pelo frontend publicado, confira tarefas e tipos e chame
+   `/healthz` da função. Esse endpoint verifica o processo, não a conexão com o banco.
 
-1. Encerre o servidor para evitar alterações durante a transferência.
-2. Faça backup do SQLite, incluindo `-wal` e `-shm` se existirem.
-3. Confira a origem e importe:
+Se a mudança envolver schema e código, aplique a migração antes de publicar a
+função, para que a nova versão não procure colunas que ainda não existem.
 
-```sh
-npm run db:migrate:check
-npm run db:migrate:supabase
-```
-
-A conferência lê o SQLite sem modificá-lo nem acessar a nuvem. A importação cria
-as tabelas, preserva IDs, hashes de senha, proprietários, tarefas sem proprietário,
-tipos e histórico diário, confere contagens e ajusta as sequências. É uma única
-transação: falhas desfazem a importação. Destinos já preenchidos são recusados.
-Sessões não são copiadas; será necessário novo login.
-
-Para um banco novo **sem importar SQLite**, use somente:
-
-```sh
-npm run db:schema:supabase
-```
-
-Esse comando pode ser repetido e não sobrescreve dados. O servidor não cria as
-tabelas PostgreSQL automaticamente: prepare o banco antes de iniciá-lo.
-
-As tabelas ficam no schema privado `tarefas`, com RLS habilitada e sem políticas
-para acesso pelo navegador. Não exponha esse schema na Data API. A conexão do
-backend precisa dos privilégios de proprietário das tabelas (ou equivalentes).
-As contas continuam na autenticação da aplicação; não são usuários Supabase Auth.
-
-## Iniciar e validar
-
-```sh
-npm run build
-npm start
-```
-
-Com `DATABASE_URL`, o servidor testa o acesso ao schema e falha se não conseguir
-conectar. Não retorna silenciosamente ao SQLite. Valide login, tarefas, tipos e
-recorrências antes de liberar novas escritas. O SQLite original é preservado.
-Depois de novas escritas no PostgreSQL, voltar ao SQLite exige reconciliar dados.
-
-## API no Supabase e frontend separado (arquitetura escolhida)
-
-A API pode ser hospedada em Edge Functions. O código em
-`supabase/functions/tarefas-api` reutiliza as regras e repositórios da aplicação,
-com um adaptador HTTP Fetch para o runtime Deno. O Express continua disponível
-para desenvolvimento local e hospedagem alternativa via Docker.
-
-Prepare a função sempre depois de alterar as regras/repositórios:
-
-```sh
-npm run edge:prepare
-```
+## Secrets da função
 
 Configure no painel **Edge Functions → Secrets**:
 
@@ -101,61 +55,110 @@ Configure no painel **Edge Functions → Secrets**:
 | `ALLOWED_ORIGINS` | `https://nextorganize.netlify.app,http://localhost:5173,http://127.0.0.1:5173`; origens exatas separadas por vírgula, sem barra final |
 | `TAREFAS_DATABASE_CA` | Opcional: conteúdo PEM da CA do banco, caso exigido pelo certificado |
 
-Não envie os secrets para o repositório. Os comandos locais de migração continuam
-usando `DATABASE_URL` com Session pooler; a função usa seu próprio secret.
-As consultas não usam prepared statements nomeados e cada worker abre no máximo
-uma conexão com o pooler.
+Não envie os secrets para o repositório. As consultas não usam prepared statements
+nomeados e cada worker abre no máximo uma conexão com o pooler. Novos domínios do
+frontend exigem inclusão explícita em `ALLOWED_ORIGINS`.
 
-Com Supabase CLI autenticada, publique:
+## Segurança da função
 
-```sh
-npx --yes supabase functions deploy tarefas-api --remote=lykruvajikxyfzcvtzzb --use-api
-```
+O gateway JWT está desabilitado **somente nessa função** (`supabase/config.toml`),
+pois as contas usam sessões próprias, não JWTs do Supabase Auth. Login e cadastro
+são públicos; tarefas e tipos exigem um Bearer aleatório válido, com hash e
+expiração no banco. CORS permite somente as origens configuradas. A limitação de
+tentativas de login por e-mail é persistida no PostgreSQL e compartilhada entre
+workers.
 
-A função estará disponível em:
+A derivação scrypt na Edge usa JavaScript (`@noble/hashes`), com parâmetros
+compatíveis com os hashes existentes, sem depender de threads nativas do Node.
+A sessão fica em `sessionStorage` no frontend e é revogada no logout. Fechar a aba
+encerra a persistência local dessa sessão, sem depender de cookies de terceiros.
 
-```text
-https://lykruvajikxyfzcvtzzb.supabase.co/functions/v1/tarefas-api
-```
-
-O gateway JWT está desabilitado **somente nessa função**, pois as contas existentes
-usam sessões próprias, não JWTs do Supabase Auth. Login/cadastro são públicos;
-tarefas/tipos exigem um Bearer aleatório válido, com hash e expiração no banco.
-CORS permite somente as origens configuradas. A limitação de tentativas de login
-por e-mail é persistida no PostgreSQL e compartilhada entre workers.
-
-A derivação scrypt na Edge usa JavaScript, com parâmetros compatíveis com os
-hashes existentes, sem depender de threads nativas do Node. A sessão remota fica
-em `sessionStorage` no frontend e é revogada no logout. Fechar a aba encerra a
-persistência local dessa sessão. Isso evita depender de cookies de terceiros.
-
-Na hospedagem estática do frontend, configure **antes do build**:
-
-```env
-VITE_API_URL=https://lykruvajikxyfzcvtzzb.supabase.co/functions/v1/tarefas-api
-```
-
-Use `client` como diretório do projeto, comando `npm ci && npm run build` e
-publique `dist`. Para desenvolvimento remoto, crie `client/.env.local` com essa
-variável e inclua `http://localhost:5173` em `ALLOWED_ORIGINS`. Para usar Express
-local, deixe `VITE_API_URL` vazia e execute `npm run dev` na raiz.
-
-Confira login e tarefas pelo frontend publicado, e o endpoint `/healthz` da
-função. Esse endpoint verifica o processo, não a conexão do banco. Rede, TLS,
-secrets e deployment precisam ser conferidos no projeto real: testes locais não
-publicam a função nem transferem dados automaticamente.
+As tabelas ficam no schema privado `tarefas`, com RLS habilitada e sem políticas
+para acesso pelo navegador. Não exponha esse schema na Data API. A conexão do
+backend precisa dos privilégios de proprietário das tabelas (ou equivalentes).
 
 Referências oficiais:
 - https://supabase.com/docs/guides/functions/connect-to-postgres
 - https://supabase.com/docs/guides/functions/cors
 - https://supabase.com/docs/guides/functions/auth
 
-## Alternativa: Express em container
+## Conexão para scripts
 
-O Dockerfile serve frontend/API no mesmo domínio. Exige `DATABASE_URL`, HTTPS e
-`NODE_ENV=production`. Escuta em `0.0.0.0`, usa `PORT` (padrão 3001) e encerra
-conexões ao receber SIGTERM. Se houver proxy, configure `TRUST_PROXY_HOPS` com o
-número exato de proxies confiáveis. Não habilite confiança irrestrita em cabeçalhos.
+Os scripts `db:*` se conectam diretamente ao PostgreSQL. Copie `.env.example` para
+`.env` na raiz. Em **Connect → Session pooler** no painel do projeto, copie a
+conexão para `SUPABASE_DATABASE_URL`, preenchendo a senha codificada para URL.
+Mantenha `PG_CA_PATH=supabase/certs/prod-ca-2021.crt`, a CA pública oficial do
+Supabase; a validação TLS permanece ativa.
+
+O Express ignora `SUPABASE_DATABASE_URL`, então ela pode ficar preenchida sem que
+`npm run dev` deixe de usar o SQLite. Os scripts, por sua vez, não leem
+`DATABASE_URL`: se só ela estiver definida (formato antigo do `.env`), eles param
+e pedem para renomeá-la.
+
+A URL `https://...supabase.co` e a chave pública não substituem essa conexão.
+Nunca coloque conexões PostgreSQL em variáveis `VITE_*` ou no frontend. O MCP serve à
+administração do projeto pelo agente; a API usa sua própria conexão.
+
+Referência: https://supabase.com/docs/guides/database/connecting-to-postgres
+
+## Frontend local contra a produção
+
+```sh
+npm run dev:remote
+```
+
+Crie `client/.env.local` a partir de `client/.env.example` (arquivo local,
+ignorado pelo Git) e abra `http://localhost:5173`. A interface local passa a usar a
+API publicada: **as alterações valem nos dados reais**. Mudanças em `server/src/`
+só aparecem depois de publicar a função. Para desenvolver sem tocar na produção,
+use `npm run dev`, com Express e SQLite.
+
+## Backup
+
+Os dados reais ficam no Supabase. Use os backups do projeto no painel ou
+`pg_dump` pela conexão Session pooler, restrito ao schema `tarefas`. O SQLite
+local não contém dados de produção.
+
+## Histórico: importação inicial do SQLite
+
+A conta e os tipos existentes foram importados do SQLite para o PostgreSQL em
+18/11/2026 (veja [estado da integração](migration-status.md)). **Não repita a
+importação**: o script recusa destinos já preenchidos. Os comandos ficam
+registrados para um banco novo:
+
+```sh
+npm run db:migrate:check
+npm run db:migrate:supabase
+```
+
+A conferência lê o SQLite sem modificá-lo nem acessar a nuvem. A importação cria
+as tabelas, preserva IDs, hashes de senha, proprietários, tarefas sem proprietário,
+tipos e histórico, confere contagens e ajusta as sequências, numa única transação.
+Sessões não são copiadas.
+
+## Segundo plano: servidor próprio com Express
+
+O Express com PostgreSQL é mantido como base para uma hospedagem própria futura e
+não está em uso. O `Dockerfile` gera o build do frontend e serve frontend e API no
+mesmo domínio:
+
+```sh
+npm run build
+npm start
+```
+
+Com `DATABASE_URL`, o servidor testa o acesso ao schema e falha se não conseguir
+conectar, sem voltar silenciosamente ao SQLite. Com `NODE_ENV=production`, exige
+`DATABASE_URL` e HTTPS (cookie `Secure`). O servidor não cria as tabelas
+PostgreSQL: aplique o schema antes. Escuta em `0.0.0.0`, usa `PORT` (padrão 3001)
+e encerra conexões ao receber SIGTERM. Atrás de proxy, configure
+`TRUST_PROXY_HOPS` com o número exato de proxies confiáveis; não habilite
+confiança irrestrita em cabeçalhos. A imagem Docker ainda não foi compilada e
+validada.
+
+Para adotar esse modo no futuro, ele poderia usar o mesmo PostgreSQL do Supabase
+ou outro banco com o schema de `supabase/migrations/`. A sessão passaria a ser
+por cookie no mesmo domínio, sem `VITE_API_URL`.
 
 ## Verificação
 
@@ -167,3 +170,14 @@ npm run build
 A suíte inclui PostgreSQL embarcado (PGlite) e SQLite, com testes de contas,
 isolamento, duplicidade, rollback, exclusão em cascata e histórico diário. Ela
 não substitui a validação de rede, TLS e credenciais no projeto real do Supabase.
+
+A função tem testes próprios no runtime Deno (`password.test.ts`), que importam a
+cópia gerada em `_shared/backend/`. Com Deno instalado, prepare a cópia e execute
+a partir da pasta da função, para que o `deno.json` dela seja usado:
+
+```sh
+npm run edge:prepare
+cd supabase/functions/tarefas-api
+deno check index.ts
+deno test
+```

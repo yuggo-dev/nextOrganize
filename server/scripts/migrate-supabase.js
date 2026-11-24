@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { supabaseDatabaseUrl } from './supabase-env.js';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 if (existsSync(path.join(root, '.env'))) process.loadEnvFile(path.join(root, '.env'));
@@ -28,9 +29,9 @@ try {
   const counts = Object.fromEntries(Object.keys(tables).map(table => [table, sqlite.prepare(`SELECT count(*) AS n FROM ${table}`).get().n]));
   console.log('Registros a importar:', counts);
   if (!dryRun) {
-    if (!process.env.DATABASE_URL) throw new Error('Configure DATABASE_URL no .env da raiz.');
+    const url = supabaseDatabaseUrl();
     const { Client } = await import('pg');
-    const connection = new URL(process.env.DATABASE_URL);
+    const connection = new URL(url);
     for (const key of ['sslmode', 'sslcert', 'sslkey', 'sslrootcert']) connection.searchParams.delete(key);
     client = new Client({
       connectionString: connection.toString(), connectionTimeoutMillis: 15000,

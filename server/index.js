@@ -13,6 +13,10 @@ try {
   if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
     throw new Error('Configure DATABASE_URL para iniciar em produção.');
   }
+  // DATABASE_URL é o modo servidor próprio; os scripts do Supabase usam SUPABASE_DATABASE_URL.
+  if (process.env.DATABASE_URL && process.env.NODE_ENV !== 'production') {
+    console.warn('Atenção: DATABASE_URL está definida; a API usará PostgreSQL, não o SQLite local. Para desenvolver com SQLite, deixe-a vazia.');
+  }
   const db = process.env.DATABASE_URL
     ? await openPostgres(process.env.DATABASE_URL, { caPath: process.env.PG_CA_PATH && path.resolve(root, process.env.PG_CA_PATH) })
     : openDatabase(process.env.DB_PATH ? path.resolve(root, process.env.DB_PATH) : path.join(directory, 'tarefas.db'));

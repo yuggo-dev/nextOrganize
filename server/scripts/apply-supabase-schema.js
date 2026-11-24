@@ -2,12 +2,12 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openPostgres } from '../src/infrastructure/postgres.js';
+import { supabaseDatabaseUrl } from './supabase-env.js';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 if (existsSync(path.join(root, '.env'))) process.loadEnvFile(path.join(root, '.env'));
 let db;
 try {
-  if (!process.env.DATABASE_URL) throw new Error('missing configuration');
-  db = await openPostgres(process.env.DATABASE_URL, {
+  db = await openPostgres(supabaseDatabaseUrl(), {
     verifySchema: false,
     caPath: process.env.PG_CA_PATH && path.resolve(root, process.env.PG_CA_PATH),
   });
@@ -19,6 +19,6 @@ try {
   })();
   console.log('Estrutura PostgreSQL aplicada. Dados existentes preservados.');
 } catch (error) {
-  console.error('Não foi possível preparar o banco. Confira DATABASE_URL, TLS e permissões.', error.code || 'configuração');
+  console.error(error.hint || `Não foi possível preparar o banco. Confira SUPABASE_DATABASE_URL, TLS e permissões. (${error.code || 'configuração'})`);
   process.exitCode = 1;
 } finally { if (db) await db.close(); }

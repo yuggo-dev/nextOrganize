@@ -1,5 +1,8 @@
 # Domínio de autenticação
 
+Arquivos, sessão e API das contas. O que a pessoa vê (cadastro, limites e
+saída) está em [Visão geral: conta e acesso](../../funcional/visao-geral.md#conta-e-acesso).
+
 ## Frontend
 
 | Camada | Arquivo | Papel |
@@ -49,5 +52,5 @@ Cadastro e login retornam `{ user }` e definem o cookie `session`, HttpOnly e
 SameSite=Lax. Com `NODE_ENV=production`, o cookie exige HTTPS. O limite é de 30
 tentativas por IP em 15 minutos, em memória do processo.
 
-Veja [arquitetura](../architecture.md) para as fronteiras de autorização e
+Veja [arquitetura](../arquitetura.md) para as fronteiras de autorização e
 [Supabase](../supabase.md) para CORS, secrets e configuração do gateway.

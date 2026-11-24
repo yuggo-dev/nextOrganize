@@ -233,5 +233,5 @@ Testes PGlite/Deno validam comportamento local. A conexão TLS e o fluxo remoto
 foram verificados por HTTP em 18/11/2026; mudanças futuras exigem nova conferência
 no ambiente real.
 
-Consulte [ferramentas](tools.md), [estado da integração](migration-status.md) e
+Consulte [ferramentas](ferramentas.md), [estado da integração](estado-supabase.md) e
 [procedimento Supabase](supabase.md) para comandos, evidências e pendências.

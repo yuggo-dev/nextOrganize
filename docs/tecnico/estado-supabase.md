@@ -88,7 +88,7 @@ CLI, porque as ferramentas MCP não estavam disponíveis na sessão.
 Frontend hospedado separadamente; banco e API no Supabase, que é o ambiente
 principal. Express + SQLite ficam para desenvolvimento local. Express + PostgreSQL
 e o Docker ficam em segundo plano, como base para um eventual servidor próprio.
-Atualizado em 23/11/2026; detalhes em [Arquitetura](architecture.md#papel-de-cada-ambiente).
+Atualizado em 23/11/2026; detalhes em [Arquitetura](arquitetura.md#papel-de-cada-ambiente).
 
 Antes de retomar ações remotas, confira [o procedimento de implantação](supabase.md)
 e os valores configurados no ambiente, sem publicar credenciais na documentação.
@@ -139,7 +139,7 @@ ou tarefas nesta configuração.
 O Supabase passou a ser documentado como ambiente principal. Express + SQLite
 ficou para desenvolvimento local, e Express + PostgreSQL (Docker) como base de um
 eventual servidor próprio. Os papéis estão em
-[Arquitetura](architecture.md#papel-de-cada-ambiente).
+[Arquitetura](arquitetura.md#papel-de-cada-ambiente).
 
 Antes, o Express e os scripts `db:*` liam a mesma `DATABASE_URL` do `.env`.
 Preenchê-la para uma migração fazia o `npm run dev` gravar no banco de produção

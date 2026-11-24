@@ -4,7 +4,7 @@ O Supabase é o ambiente **principal** da aplicação: a API roda na Edge Functi
 `tarefas-api` e os dados ficam no PostgreSQL do projeto `<project-ref>`.
 O frontend é publicado separadamente, em `<URL-do-frontend>`.
 Express e SQLite servem ao desenvolvimento local; veja os papéis de cada ambiente
-em [Arquitetura](architecture.md#papel-de-cada-ambiente).
+em [Arquitetura](arquitetura.md#papel-de-cada-ambiente).
 
 ## Valores reais do ambiente
 
@@ -142,7 +142,7 @@ local não contém dados de produção.
 ## Histórico: importação inicial do SQLite
 
 A conta e os tipos existentes foram importados do SQLite para o PostgreSQL em
-18/11/2026 (veja [estado da integração](migration-status.md)). **Não repita a
+18/11/2026 (veja [estado da integração](estado-supabase.md)). **Não repita a
 importação**: o script recusa destinos já preenchidos. Os comandos ficam
 registrados para um banco novo:
 

@@ -2,8 +2,9 @@
 
 Registro das mudanças do nextOrganize, da mais recente para a mais antiga. Cada
 entrada diz o que mudou para quem usa o app e o que mudou por dentro. Detalhes
-técnicos ficam nos documentos de cada assunto; detalhes da nuvem ficam no
-[estado da integração](migration-status.md).
+de uso ficam na [documentação funcional](funcional/README.md) e detalhes
+técnicos na [documentação técnica](tecnico/README.md); detalhes da nuvem ficam no
+[estado da integração](tecnico/estado-supabase.md).
 
 **Como manter:** ao terminar uma mudança, acrescente uma entrada no topo, com a
 data, a branch e o commit (quando houver). Mudanças só planejadas ficam em
@@ -21,7 +22,7 @@ ainda não existe.
 ### Atividades habituais, painel de hábitos e novas janelas
 
 Branch `desenvolvimento`. Regras em
-[Tarefas: hábitos](domains/tasks.md#hábitos).
+[Tarefas: hábitos](funcional/desempenho.md#hábitos).
 
 - **Habituais:** as regulares passam a se chamar atividades habituais na lista
   (grupo **Habituais**).
@@ -51,7 +52,7 @@ Branch `desenvolvimento`. Regras em
 ### Horários, atraso e lista do dia — `6c92518`
 
 Branch `desenvolvimento`, publicada na `main` pelo PR #2. Regras em
-[Tarefas: horários e atraso](domains/tasks.md#horários-e-atraso).
+[Tarefas: horários e atraso](funcional/agenda.md#horários-e-atraso).
 
 - **Regulares:** sai o horário de conclusão e entra um horário de notificação
   opcional (`notify_time`). Os horários de conclusão existentes viraram horários de
@@ -127,7 +128,7 @@ Branch `desenvolvimento`, ainda sem commit.
 - O identificador do projeto Supabase, a URL da API e o domínio do frontend foram
   trocados por marcadores (`<project-ref>`, `<URL-do-frontend>`) nos arquivos e em
   todo o histórico do Git.
-- [Supabase](supabase.md#valores-reais-do-ambiente) explica onde achar os valores
+- [Supabase](tecnico/supabase.md#valores-reais-do-ambiente) explica onde achar os valores
   reais.
 
 ### Nome nextOrganize e revisão da documentação — `8c526b9`, `1abeb25`

@@ -198,7 +198,6 @@ h1,h2,h3,p {
   font-size: .74rem;
   color: var(--muted);
   margin-top: 5px;
-  text-transform: capitalize;
 }
 
 .stats {
@@ -316,8 +315,12 @@ h1,h2,h3,p {
 .calendar-heading h2 {
   font-size: 1.15rem;
   font-weight: 500;
-  text-transform: capitalize;
   letter-spacing: -.025em;
+}
+
+/* Só a primeira letra: em português, "de" continua minúsculo. */
+.calendar-heading h2::first-letter {
+  text-transform: uppercase;
 }
 
 .calendar-nav {
@@ -927,11 +930,37 @@ input[type=color] {
 }
 
 .auth-wrap {
-  padding-top:clamp(32px,12vh,120px);
+  max-width: 420px;
+  padding-top: clamp(28px, 10vh, 110px);
+  padding-bottom: 32px;
+}
+
+.auth-brand {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin-bottom: 26px;
+  text-align: center;
+}
+
+.auth-tagline {
+  margin: 0;
+  text-wrap: balance;
+  color: var(--muted);
+  font-size: .88rem;
+}
+
+.auth-card {
+  padding: 28px 26px 22px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--surface) 92%, var(--accent)), var(--surface) 55%);
+  box-shadow: 0 24px 70px var(--shadow);
 }
 
 .auth-wrap h1 {
-  font-size: 2.1rem;
+  margin: 0;
+  font-size: 1.6rem;
   font-weight: 600;
   letter-spacing: -.04em;
 }
@@ -942,16 +971,94 @@ input[type=color] {
   font-size:.9rem;
 }
 
+.auth-card .sub {
+  margin-bottom: 20px;
+}
+
 .auth-form {
-  background:var(--surface);
-  border:1px solid var(--line);
-  padding:22px;
-  border-radius:14px;
-  margin:16px 0;
+  margin: 0;
+}
+
+.auth-form button.main {
+  padding: 11px 14px;
+  margin-top: 4px;
+  font-size: .88rem;
+  font-weight: 600;
 }
 
 .auth-form small {
   color:var(--muted);
+}
+
+.auth-switch {
+  margin: 20px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .85rem;
+  text-align: center;
+}
+
+button.link-button {
+  padding: 2px 4px;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: inherit;
+  font-weight: 600;
+}
+
+button.link-button:hover:not(:disabled) {
+  background: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-mark {
+  display: block;
+  flex-shrink: 0;
+  filter: drop-shadow(0 8px 18px color-mix(in srgb, var(--accent) 30%, transparent));
+}
+
+.logo-wordmark {
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -.045em;
+  line-height: 1;
+}
+
+.logo-next {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.app-loading {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding-top: 30vh;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+.sidebar-logo {
+  margin-bottom: 4px;
+}
+
+@media (max-width: 760px) {
+  .sidebar-logo {
+    width: 30px;
+    height: 30px;
+  }
+  .logo-wordmark {
+    font-size: 1.5rem;
+  }
 }
 
 #root {

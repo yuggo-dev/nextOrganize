@@ -166,9 +166,9 @@ export default function TaskList({
         <span className="momentum-decoration" aria-hidden="true">✦</span>
       </section>}
       {loading ? <div className="empty-state" role="status">Carregando tarefas…</div> : tasks.length ? <>
-        {/* Uma lista só: regulares e depois pontuais, separadas por subtítulos discretos. */}
+        {/* Uma lista só: habituais e depois pontuais, separadas por subtítulos discretos. */}
         {regularTasks.length > 0 && <section className="list-group" aria-labelledby="group-regular">
-          <GroupLabel id="group-regular" title="Regulares" detail={`${regularTasks.filter(task => task.done).length}/${regularTasks.length}`} />
+          <GroupLabel id="group-regular" title="Habituais" detail={`${regularTasks.filter(task => task.done).length}/${regularTasks.length}`} />
           {regularTasks.map(renderCard)}
         </section>}
         {oneOffTasks.length > 0 && <section className="list-group" aria-labelledby="group-one-off">

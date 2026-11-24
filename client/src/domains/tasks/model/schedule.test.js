@@ -14,6 +14,19 @@ test("today comes before future and overdue tasks and time breaks ties", () => {
   assert.equal(isOverdue(task(8, "2026-11-15", "09:00", true), now), false);
 });
 
+test("pontuais também escolhem entre atrasada e não feita", () => {
+  const now = new Date(2026, 10, 16, 15, 0);
+  const punctual = (due, due_time, tracks_overdue) => ({ recurrence: "none", due, due_time, tracks_overdue, done: false, priority: 2 });
+  // Contando atraso: atrasa depois do horário, no próprio dia.
+  assert.equal(isOverdue(punctual("2026-11-16", "10:00", true), now), true);
+  // Sem contar atraso: nunca atrasada; no dia ainda pendente, depois "não feita".
+  assert.equal(isOverdue(punctual("2026-11-16", "10:00", false), now), false);
+  assert.equal(isMissed(punctual("2026-11-16", "10:00", false), now), false);
+  assert.equal(isPending(punctual("2026-11-16", "10:00", false), now), true);
+  assert.equal(isOverdue(punctual("2026-11-15", null, false), now), false);
+  assert.equal(isMissed(punctual("2026-11-15", null, false), now), true);
+});
+
 test("regulares só atrasam depois do dia e quando contam atraso; senão ficam não feitas", () => {
   const now = new Date(2026, 10, 16, 23, 0);
   const regular = (due, tracks_overdue, done = false) => ({ recurrence: "daily", due, tracks_overdue, done, notify_time: "07:00", priority: 2 });

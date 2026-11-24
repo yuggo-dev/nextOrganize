@@ -18,9 +18,39 @@ ainda não existe.
 
 ## 24/11/2026
 
-### Horários, atraso e lista do dia
+### Atividades habituais, painel de hábitos e novas janelas
 
-Branch `desenvolvimento`, ainda sem commit. Regras em
+Branch `desenvolvimento`. Regras em
+[Tarefas: hábitos](domains/tasks.md#hábitos).
+
+- **Habituais:** as regulares passam a se chamar atividades habituais na lista
+  (grupo **Habituais**).
+- **Calendário:** só mostra as pontuais; os mini cards das regulares saíram. O
+  tooltip do dia cita quantas habituais existem.
+- **Desempenho:** novo painel **Hábitos** com consistência dos últimos 28 dias,
+  maior sequência atual, dias perfeitos, progresso de hoje, uma linha por hábito
+  (grade de 28 dias, sequência, recorde e taxa) e taxa por dia da semana. Os
+  indicadores antigos passaram a contar só as pontuais.
+- **Calendário no estilo Apple:** cada pontual virou um card no dia: barra
+  tingida quando não tem horário; ponto, título e hora quando tem. Até três por
+  dia (dois em dias estreitos), com "+N mais" para o resto.
+  Cada card mostra o ícone do tipo.
+- **Filtro por tipo no calendário:** ao escolher um tipo, o calendário mostra
+  todas as atividades dele, habituais inclusive, com os marcadores de ícone de
+  antes em vez dos cards.
+- **Atrasada ou não feita nas pontuais:** a opção **Se o dia passar sem
+  concluir** vale agora também para as pontuais. Sem contar atraso, elas nunca
+  ficam atrasadas e viram **Não feita** quando a data passa.
+- **Nova janela de atividade:** escolha entre Pontual e Habitual no topo, título
+  grande, tipos em chips com ícone, prioridade e frequência em botões
+  segmentados, a escolha Atrasada/Não feita em cartões e botões presos ao pé.
+- **Janelas de tipo:** prévia ao vivo, cores em círculos com uma personalizada
+  e, em Personalizar tipos, os tipos em chips.
+- **Por dentro:** novo `model/habits.js`, com testes.
+
+### Horários, atraso e lista do dia — `6c92518`
+
+Branch `desenvolvimento`, publicada na `main` pelo PR #2. Regras em
 [Tarefas: horários e atraso](domains/tasks.md#horários-e-atraso).
 
 - **Regulares:** sai o horário de conclusão e entra um horário de notificação

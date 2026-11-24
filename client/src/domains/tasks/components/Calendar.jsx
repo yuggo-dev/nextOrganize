@@ -5,6 +5,8 @@ import { calendarDays, isoDate } from '../model/schedule.js';
 import SelectedDayLine from './SelectedDayLine.jsx';
 
 const weekdays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+// Até 3 cards por dia; em dias estreitos o CSS mostra 2 e troca o "+N".
+const MAX_CHIPS = 3;
 
 // collapsed/onToggleCollapsed: no celular o calendário é uma aba presa ao pé da
 // tela (só o cabeçalho do mês) que se abre por cima da lista. No computador o
@@ -18,6 +20,7 @@ export default function Calendar({ month, selected, today, tasks, onMonthChange,
   }
   const longMonth = month.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
   const monthLabel = longMonth.charAt(0).toLocaleUpperCase('pt-BR') + longMonth.slice(1);
+  const filtered = Boolean(selectedType);
   const move = offset => onMonthChange(new Date(month.getFullYear(), month.getMonth() + offset, 1));
 
   return <section className={`calendar-panel panel month-calendar${collapsed ? ' is-collapsed' : ''}${closing ? ' is-closing' : ''}`} aria-label="Calendário de tarefas">
@@ -44,23 +47,30 @@ export default function Calendar({ month, selected, today, tasks, onMonthChange,
     </div>}
     <div className="calendar-body" id="calendar-body">
     <div className="month-legend" aria-label="Legenda do calendário">
-      <span><FiBookmark aria-hidden="true" />Ícone: pontual</span>
-      <span><i className="month-regular-legend" aria-hidden="true" />Card leve: regulares</span>
+      {filtered ? <span><FiBookmark aria-hidden="true" />Ícones: todas as atividades do tipo, habituais inclusive</span>
+        : <><span><FiBookmark aria-hidden="true" />Cards: pontuais na cor do tipo</span>
+        <span>Habituais aparecem ao filtrar por tipo</span></>}
     </div>
     <div className="calendar-weekdays">{weekdays.map(day => <span key={day}>{day}</span>)}</div>
     <div className="calendar-grid">
       {calendarDays(month).map(date => {
         const value = isoDate(date);
-        const entries = byDay.get(value) || [];
-        const regular = entries.filter(task => ['daily', 'weekly'].includes(task.recurrence));
-        const punctual = entries.filter(task => !['daily', 'weekly'].includes(task.recurrence));
-        const punctualTypes = groupCalendarTypes(punctual);
-        const regularTypes = groupCalendarTypes(regular);
+        // Habituais (diárias e semanais) não aparecem em destaque no calendário:
+        // fundo, contagem, conclusão e marcadores consideram só as pontuais. Elas
+        // seguem na lista do dia e no Desempenho.
+        // Com um tipo escolhido no filtro, o calendário mostra tudo desse tipo,
+        // habituais inclusive, com os marcadores de ícone por tipo.
+        const habits = filtered ? [] : (byDay.get(value) || []).filter(task => ['daily', 'weekly'].includes(task.recurrence));
+        const entries = (byDay.get(value) || []).filter(task => filtered || !['daily', 'weekly'].includes(task.recurrence));
+        const markers = filtered ? groupCalendarTypes(entries) : [];
+        // Como no calendário da Apple: um card por atividade, primeiro as de dia
+        // inteiro (sem horário) e depois por horário; o resto vira "+N mais".
+        const agenda = [...entries].sort((a, b) => (a.due_time || '').localeCompare(b.due_time || '') || a.title.localeCompare(b.title, 'pt-BR'));
         const completed = entries.filter(task => task.done).length;
         const allDone = entries.length > 0 && completed === entries.length;
         const label = date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
-        const details = `${punctual.length} pontuais, ${regular.length} regulares, ${completed} de ${entries.length} concluídas`;
-        const preview = [punctual.length ? `Pontuais: ${punctual.map(task => task.title).join(', ')}` : '', regular.length ? `Regulares: ${regular.map(task => task.title).join(', ')}` : ''].filter(Boolean).join('\n');
+        const details = `${entries.length} ${filtered ? 'atividades' : 'pontuais'}, ${completed} concluídas${habits.length ? `, ${habits.length} habituais` : ''}`;
+        const preview = entries.length ? `${filtered ? "Atividades" : "Pontuais"}: ${entries.map(task => task.title).join(', ')}` : '';
         return <button type="button" key={value} onClick={() => onSelect(value)}
           className={`calendar-day${entries.length ? ' has-tasks' : ''}${date.getMonth() !== month.getMonth() ? ' outside' : ''}${value === today ? ' is-today' : ''}${value === selected ? ' selected' : ''}${allDone ? ' day-complete' : ''}`}
           aria-pressed={value === selected} aria-current={value === today ? 'date' : undefined}
@@ -69,30 +79,20 @@ export default function Calendar({ month, selected, today, tasks, onMonthChange,
             {allDone ? <FiCheckCircle className="month-day-done" aria-hidden="true" /> : entries.length > 0 && <span className="day-task-count" aria-hidden="true">{entries.length - completed}</span>}
           </span>
           <span className="month-day-content" aria-hidden="true">
-            {punctual.length > 0 && <span className="month-punctual-row">
-              {punctualTypes.map(group => <span key={group.id} title={`${group.name}: ${group.tasks.filter(task=>task.done).length}/${group.tasks.length} concluídas
-${group.tasks.map(task=>task.title).join(', ')}`} className={`month-event${group.done ? ' event-done' : ''}`} style={{'--event-color':group.color}}>
+            {filtered ? markers.length > 0 && <span className="month-punctual-row">
+              {markers.map(group => <span key={group.id} className={`month-event${group.done ? ' event-done' : ''}`} style={{'--event-color':group.color}}>
                 <TypeIcon icon={group.icon} name={group.name} />
                 {group.tasks.length > 1 && <b className="month-event-count">{group.tasks.length}</b>}
               </span>)}
-            </span>}
-            {/* Regulares: um mini card leve por tipo, como os cards da lista (fundo
-                claro na cor do tipo, faixa à esquerda e o ícone), sem título.
-                Fica apagado quando todas do tipo foram concluídas no dia. */}
-            {regular.length > 0 && <span className="month-routines">
-              <span className="month-routine-cards">
-                {/* Quantos cabem depende da largura do dia (CSS por container):
-                    4, 2 ou 1, com "+N" para o restante. */}
-                {regularTypes.slice(0, 4).map((group, index) =>
-                  <span key={group.id} className={`month-routine-card rc-${index}${group.done ? ' routine-done' : ''}`} style={{'--event-color':group.color}}
-                    title={`${group.name}: ${group.tasks.length - group.pending}/${group.tasks.length} concluídas`}>
-                    <TypeIcon icon={group.icon} name={group.name} />
-                  </span>
-                )}
-                {regularTypes.length > 4 && <span className="month-routine-more more-4">+{regularTypes.length - 4}</span>}
-                {regularTypes.length > 2 && <span className="month-routine-more more-2">+{regularTypes.length - 2}</span>}
-                {regularTypes.length > 1 && <span className="month-routine-more more-1">+{regularTypes.length - 1}</span>}
-              </span>
+            </span> : agenda.length > 0 &&<span className="month-agenda">
+              {agenda.slice(0, MAX_CHIPS).map((task, index) => <span key={task.id ?? `${task.title}-${index}`}
+                className={`month-chip chip-${index + 1}${task.done ? ' is-done' : ''}${task.due_time ? ' has-time' : ' all-day'}`}
+                style={{'--event-color': task.category_color || '#64748b'}}>
+                <TypeIcon icon={task.category_icon} name={task.category || 'Sem tipo'} />
+                <span className="month-chip-title">{task.title}</span>
+                {task.due_time && <span className="month-chip-time">{task.due_time}</span>}
+              </span>)}
+              {[3, 2].map(shown => agenda.length > shown && <span key={shown} className={`month-chip-more more-${shown}`}>+{agenda.length - shown}<span className="more-word"> mais</span></span>)}
             </span>}
           </span>
         </button>;
